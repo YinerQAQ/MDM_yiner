@@ -53,4 +53,10 @@ public class MdmDataModel {
 
     @TableField("IS_DELETED")
     private Integer isDeleted;
+
+    @TableField("CODE_RULE_ID")
+    private String codeRuleId;
+
+    @TableField("WORKFLOW_ID")
+    private String workflowId;
 }

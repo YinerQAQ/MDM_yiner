@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,21 +21,36 @@ public class MdmCodeSegment {
     @TableId(value = "ID", type = IdType.INPUT)
     private String id;
 
-    @TableField("SCHEMEID")
+    @TableField("SCHEME_ID")
     private String schemeId;
 
-    @TableField("SEGMENTTYPE")
-    private String segmentType;
+    @TableField("SEGMENT_CODE")
+    private String segmentCode;
 
-    @TableField("SEGMENTNAME")
+    @TableField("SEGMENT_NAME")
     private String segmentName;
 
-    @TableField("GENERATERULE")
-    private String generateRule;
+    @TableField("SEGMENT_TYPE")
+    private String segmentType;
 
-    @TableField("LENGTH")
-    private Integer length;
+    @TableField("SEGMENT_FORMAT")
+    private String segmentFormat;
 
-    @TableField("SORTORDER")
+    @TableField("SEGMENT_VALUE")
+    private String segmentValue;
+
+    @TableField("FIXED_VALUE")
+    private String fixedValue;
+
+    @TableField("SORT_ORDER")
     private Integer sortOrder;
+
+    @TableField("CREATE_TIME")
+    private LocalDateTime createTime;
+
+    @TableField("UPDATE_TIME")
+    private LocalDateTime updateTime;
+
+    @TableField("IS_DELETED")
+    private Integer isDeleted;
 }

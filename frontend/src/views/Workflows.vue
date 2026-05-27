@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import {
-  ElCard,
   ElTable,
   ElTableColumn,
   ElButton,
@@ -21,6 +21,8 @@ import {
   activateWorkflow,
   deactivateWorkflow
 } from '../api/workflows'
+
+const router = useRouter()
 
 const workflows = ref<MdmWorkflow[]>([])
 const dialogVisible = ref(false)
@@ -119,14 +121,10 @@ const handleDeactivate = async (id: string) => {
 
 const getStatusClass = (status: string): string => {
   switch (status) {
-    case '启用':
-      return 'status-active'
-    case '停用':
-      return 'status-inactive'
-    case '草稿':
-      return 'status-draft'
-    default:
-      return ''
+    case '启用': return 'status-active'
+    case '停用': return 'status-inactive'
+    case '草稿': return 'status-draft'
+    default: return ''
   }
 }
 
@@ -136,89 +134,60 @@ onMounted(() => {
 </script>
 
 <template>
-  <ElCard title="工作流管理" class="card">
-    <div class="card-header">
-      <ElButton type="primary" icon="Plus" @click="openDialog()">
-        新建流程
-      </ElButton>
+  <div class="page-container">
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">流程管理</h2>
+        <p class="page-desc">管理审核流程与审批链路配置</p>
+      </div>
+      <ElButton type="primary" @click="openDialog()">新建流程</ElButton>
     </div>
-    <ElTable :data="workflows" stripe>
-      <ElTableColumn prop="workflowCode" label="流程编码" />
-      <ElTableColumn prop="workflowName" label="流程名称" />
-      <ElTableColumn prop="orgId" label="所属单位" />
-      <ElTableColumn prop="status" label="状态">
-        <template #default="scope">
-          <span :class="getStatusClass(scope.row.status)">
-            {{ scope.row.status }}
-          </span>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn prop="createTime" label="创建时间" />
-      <ElTableColumn label="操作">
-        <template #default="scope">
-          <ElButton v-if="scope.row.status !== '启用'" type="primary" size="small" icon="Edit" @click="openDialog(scope.row)">编辑</ElButton>
-          <ElButton v-if="scope.row.status === '草稿'" type="danger" size="small" icon="Delete" @click="handleDelete(scope.row.id)">删除</ElButton>
-          <ElButton v-if="scope.row.status !== '启用'" type="success" size="small" icon="PlayCircle" @click="handleActivate(scope.row.id)">启用</ElButton>
-          <ElButton v-if="scope.row.status === '启用'" type="warning" size="small" icon="Square" @click="handleDeactivate(scope.row.id)">停用</ElButton>
-        </template>
-      </ElTableColumn>
-    </ElTable>
-  </ElCard>
 
-  <ElDialog title="流程信息" v-model="dialogVisible" width="500px">
-    <ElForm :model="form" label-width="100px">
-      <ElFormItem label="流程编码" required>
-        <ElInput v-model="form.workflowCode" :disabled="isEdit" />
-      </ElFormItem>
-      <ElFormItem label="流程名称" required>
-        <ElInput v-model="form.workflowName" />
-      </ElFormItem>
-      <ElFormItem label="所属单位">
-        <ElInput v-model="form.orgId" />
-      </ElFormItem>
-      <ElFormItem label="流程定义">
-        <ElInput v-model="form.definition" type="textarea" :rows="5" />
-      </ElFormItem>
-    </ElForm>
-    <template #footer>
-      <ElButton @click="dialogVisible = false">取消</ElButton>
-      <ElButton type="primary" @click="saveWorkflow">保存</ElButton>
-    </template>
-  </ElDialog>
+    <div class="table-card">
+      <ElTable :data="workflows" stripe>
+        <ElTableColumn prop="workflowCode" label="流程编码" />
+        <ElTableColumn prop="workflowName" label="流程名称" />
+        <ElTableColumn prop="orgId" label="所属单位" />
+        <ElTableColumn prop="status" label="状态">
+          <template #default="scope">
+            <span :class="getStatusClass(scope.row.status)">{{ scope.row.status }}</span>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="createTime" label="创建时间" />
+        <ElTableColumn label="操作" width="300">
+          <template #default="scope">
+            <ElButton type="primary" size="small" @click="router.push(`/workflow-designer/${scope.row.id}`)">设计</ElButton>
+            <ElButton v-if="scope.row.status !== '启用'" type="primary" size="small" @click="openDialog(scope.row)">编辑</ElButton>
+            <ElButton v-if="scope.row.status === '草稿'" type="danger" size="small" @click="handleDelete(scope.row.id)">删除</ElButton>
+            <ElButton v-if="scope.row.status !== '启用'" type="success" size="small" @click="handleActivate(scope.row.id)">启用</ElButton>
+            <ElButton v-if="scope.row.status === '启用'" type="warning" size="small" @click="handleDeactivate(scope.row.id)">停用</ElButton>
+          </template>
+        </ElTableColumn>
+      </ElTable>
+    </div>
+
+    <ElDialog title="流程信息" v-model="dialogVisible" width="500px">
+      <ElForm :model="form" label-width="100px">
+        <ElFormItem label="流程编码" required>
+          <ElInput v-model="form.workflowCode" :disabled="isEdit" />
+        </ElFormItem>
+        <ElFormItem label="流程名称" required>
+          <ElInput v-model="form.workflowName" />
+        </ElFormItem>
+        <ElFormItem label="所属单位">
+          <ElInput v-model="form.orgId" />
+        </ElFormItem>
+        <ElFormItem label="流程定义">
+          <ElInput v-model="form.definition" type="textarea" :rows="5" />
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="dialogVisible = false">取消</ElButton>
+        <ElButton type="primary" @click="saveWorkflow">保存</ElButton>
+      </template>
+    </ElDialog>
+  </div>
 </template>
 
-<style scoped>
-.card {
-  margin-bottom: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-}
-
-.status-active {
-  color: #67c23a;
-  background: #e8f5e9;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.status-inactive {
-  color: #f56c6c;
-  background: #fef0f0;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.status-draft {
-  color: #909399;
-  background: #f5f5f5;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
+<style scoped lang="scss">
 </style>

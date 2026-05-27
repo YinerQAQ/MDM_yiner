@@ -40,3 +40,49 @@ export const archiveMainData = async (id: string) => {
 export const createVersion = async (id: string) => {
   return instance.post<ApiResponse<void>>(`/main-data/${id}/version`)
 }
+
+// 数据生命周期
+export const submitData = async (id: string, data?: any) => {
+  return instance.post<ApiResponse<void>>(`/main-data/${id}/submit`, data)
+}
+
+export const approveData = async (id: string) => {
+  return instance.post<ApiResponse<void>>(`/main-data/${id}/approve`)
+}
+
+export const rejectData = async (id: string) => {
+  return instance.post<ApiResponse<void>>(`/main-data/${id}/reject`)
+}
+
+export const withdrawData = async (id: string) => {
+  return instance.post<ApiResponse<void>>(`/main-data/${id}/withdraw`)
+}
+
+export const changeData = async (id: string) => {
+  return instance.post<ApiResponse<void>>(`/main-data/${id}/change`)
+}
+
+export const getVersionHistory = async (id: string) => {
+  return instance.get<ApiResponse<any[]>>(`/main-data/${id}/versions`)
+}
+
+// 归档管理
+export const archiveApply = async (data: any) => {
+  return instance.post<ApiResponse<any>>('/main-data/archive/apply', data)
+}
+
+export const archiveApprove = async (applyId: string) => {
+  return instance.post<ApiResponse<void>>(`/main-data/archive/${applyId}/approve`)
+}
+
+export const archiveReject = async (applyId: string, data: any) => {
+  return instance.post<ApiResponse<void>>(`/main-data/archive/${applyId}/reject`, data)
+}
+
+export const getArchiveList = async (params?: any) => {
+  return instance.get<ApiResponse<any[]>>('/main-data/archive/list', { params })
+}
+
+export const getArchiveData = async (params?: any) => {
+  return instance.get<ApiResponse<any[]>>('/main-data/archive/data', { params })
+}

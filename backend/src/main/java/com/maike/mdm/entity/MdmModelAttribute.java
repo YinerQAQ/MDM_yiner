@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,30 +21,39 @@ public class MdmModelAttribute {
     @TableId(value = "ID", type = IdType.INPUT)
     private String id;
 
-    @TableField("MODELID")
+    @TableField("MODEL_ID")
     private String modelId;
 
-    @TableField("ATTRCODE")
-    private String attrCode;
+    @TableField("ATTRIBUTE_CODE")
+    private String attributeCode;
 
-    @TableField("ATTRNAME")
-    private String attrName;
+    @TableField("ATTRIBUTE_NAME")
+    private String attributeName;
 
-    @TableField("DATATYPE")
+    @TableField("DATA_TYPE")
     private String dataType;
 
-    @TableField("LENGTH")
-    private Integer length;
+    @TableField("IS_REQUIRED")
+    private Integer isRequired;
 
-    @TableField("ISREQUIRED")
-    private String isRequired;
+    @TableField("MAX_LENGTH")
+    private Integer maxLength;
 
-    @TableField("DEFAULTVALUE")
+    @TableField("DEFAULT_VALUE")
     private String defaultValue;
 
-    @TableField("DISPLAYORDER")
-    private Integer displayOrder;
+    @TableField("DISPLAY_TYPE")
+    private String displayType;
 
-    @TableField("STATUS")
-    private String status;
+    @TableField("SORT_ORDER")
+    private Integer sortOrder;
+
+    @TableField("CREATE_TIME")
+    private LocalDateTime createTime;
+
+    @TableField("UPDATE_TIME")
+    private LocalDateTime updateTime;
+
+    @TableField("IS_DELETED")
+    private Integer isDeleted;
 }

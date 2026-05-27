@@ -19,10 +19,10 @@ public class BaseRole {
     @TableId(value = "ID", type = IdType.INPUT)
     private String id;
 
-    @TableField("ROLECODE")
+    @TableField("ROLE_CODE")
     private String roleCode;
 
-    @TableField("ROLENAME")
+    @TableField("ROLE_NAME")
     private String roleName;
 
     @TableField("ORGID")
@@ -30,4 +30,10 @@ public class BaseRole {
 
     @TableField("STATUS")
     private String status;
+
+    @TableField("CREATE_TIME")
+    private java.time.LocalDateTime createTime;
+
+    @TableField("UPDATE_TIME")
+    private java.time.LocalDateTime updateTime;
 }

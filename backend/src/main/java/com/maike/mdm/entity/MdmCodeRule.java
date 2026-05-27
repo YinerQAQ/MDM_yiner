@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,15 +21,27 @@ public class MdmCodeRule {
     @TableId(value = "ID", type = IdType.INPUT)
     private String id;
 
-    @TableField("RULECODE")
+    @TableField("RULE_CODE")
     private String ruleCode;
 
-    @TableField("RULENAME")
+    @TableField("RULE_NAME")
     private String ruleName;
 
-    @TableField("DESCRIPTION")
-    private String description;
+    @TableField("ORGID")
+    private String orgId;
 
     @TableField("STATUS")
     private String status;
+
+    @TableField("CREATE_BY")
+    private String createBy;
+
+    @TableField("CREATE_TIME")
+    private LocalDateTime createTime;
+
+    @TableField("UPDATE_TIME")
+    private LocalDateTime updateTime;
+
+    @TableField("IS_DELETED")
+    private Integer isDeleted;
 }

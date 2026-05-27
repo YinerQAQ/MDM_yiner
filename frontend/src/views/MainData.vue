@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import {
-  ElCard,
   ElTable,
   ElTableColumn,
   ElButton,
@@ -189,18 +188,12 @@ const handleCreateVersion = async (id: string) => {
 
 const getStatusClass = (status: string): string => {
   switch (status) {
-    case '审核通过':
-      return 'status-approved'
-    case '审核中':
-      return 'status-pending'
-    case '暂存':
-      return 'status-draft'
-    case '审核拒绝':
-      return 'status-rejected'
-    case '已归档':
-      return 'status-archived'
-    default:
-      return ''
+    case '审核通过': return 'status-approved'
+    case '审核中': return 'status-pending'
+    case '暂存': return 'status-draft'
+    case '审核拒绝': return 'status-rejected'
+    case '已归档': return 'status-archived'
+    default: return ''
   }
 }
 
@@ -215,161 +208,116 @@ onMounted(() => {
 </script>
 
 <template>
-  <ElCard title="主数据管理" class="card">
-    <div class="card-header">
-      <ElSelect v-model="selectedModelId" @change="loadMainData" style="width: 200px; margin-right: 20px;">
-        <ElOption v-for="model in models" :key="model.id" :label="model.modelName" :value="model.id" />
-      </ElSelect>
-      <ElButton type="primary" icon="Plus" @click="openDialog()" :disabled="!selectedModelId">
-        新增数据
-      </ElButton>
+  <div class="page-container">
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">主数据管理</h2>
+        <p class="page-desc">管理主数据的全生命周期</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <ElSelect v-model="selectedModelId" @change="loadMainData" style="width: 200px;">
+          <ElOption v-for="model in models" :key="model.id" :label="model.modelName" :value="model.id" />
+        </ElSelect>
+        <ElButton type="primary" @click="openDialog()" :disabled="!selectedModelId">新增数据</ElButton>
+      </div>
     </div>
 
-    <ElTabs type="card">
-      <ElTabPane label="全部" name="all">
-        <ElTable :data="filteredData('all')" stripe>
-          <ElTableColumn prop="code" label="数据编码" />
-          <ElTableColumn prop="dataStatus" label="状态">
-            <template #default="scope">
-              <span :class="getStatusClass(scope.row.dataStatus)">
-                {{ scope.row.dataStatus }}
-              </span>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn prop="version" label="版本" />
-          <ElTableColumn prop="createdByName" label="创建人" />
-          <ElTableColumn prop="createTime" label="创建时间" />
-          <ElTableColumn label="操作">
-            <template #default="scope">
-              <ElButton v-if="scope.row.dataStatus === '暂存'" type="primary" size="small" icon="Edit" @click="openDialog(scope.row)">编辑</ElButton>
-              <ElButton v-if="scope.row.dataStatus === '暂存'" type="success" size="small" icon="Check" @click="handleSubmit(scope.row.id)">提交审核</ElButton>
-              <ElButton v-if="scope.row.dataStatus === '暂存'" type="danger" size="small" icon="Delete" @click="handleDelete(scope.row.id)">删除</ElButton>
-              <ElButton v-if="scope.row.dataStatus === '审核中'" type="success" size="small" icon="Check" @click="handleApprove(scope.row.id)">审核通过</ElButton>
-              <ElButton v-if="scope.row.dataStatus === '审核中'" type="danger" size="small" icon="X" @click="handleReject(scope.row.id)">拒绝</ElButton>
-              <ElButton v-if="scope.row.dataStatus === '审核通过'" type="primary" size="small" icon="Refresh" @click="handleCreateVersion(scope.row.id)">发起变更</ElButton>
-              <ElButton v-if="scope.row.dataStatus === '审核通过'" type="warning" size="small" icon="Archive" @click="handleArchive(scope.row.id)">归档</ElButton>
-            </template>
-          </ElTableColumn>
-        </ElTable>
-      </ElTabPane>
-      <ElTabPane label="暂存" name="draft">
-        <ElTable :data="filteredData('暂存')" stripe>
-          <ElTableColumn prop="code" label="数据编码" />
-          <ElTableColumn prop="createdByName" label="创建人" />
-          <ElTableColumn prop="createTime" label="创建时间" />
-          <ElTableColumn label="操作">
-            <template #default="scope">
-              <ElButton type="primary" size="small" icon="Edit" @click="openDialog(scope.row)">编辑</ElButton>
-              <ElButton type="success" size="small" icon="Check" @click="handleSubmit(scope.row.id)">提交审核</ElButton>
-              <ElButton type="danger" size="small" icon="Delete" @click="handleDelete(scope.row.id)">删除</ElButton>
-            </template>
-          </ElTableColumn>
-        </ElTable>
-      </ElTabPane>
-      <ElTabPane label="审核中" name="pending">
-        <ElTable :data="filteredData('审核中')" stripe>
-          <ElTableColumn prop="code" label="数据编码" />
-          <ElTableColumn prop="createdByName" label="创建人" />
-          <ElTableColumn prop="createTime" label="创建时间" />
-          <ElTableColumn label="操作">
-            <template #default="scope">
-              <ElButton type="success" size="small" icon="Check" @click="handleApprove(scope.row.id)">审核通过</ElButton>
-              <ElButton type="danger" size="small" icon="X" @click="handleReject(scope.row.id)">拒绝</ElButton>
-            </template>
-          </ElTableColumn>
-        </ElTable>
-      </ElTabPane>
-      <ElTabPane label="审核通过" name="approved">
-        <ElTable :data="filteredData('审核通过')" stripe>
-          <ElTableColumn prop="code" label="数据编码" />
-          <ElTableColumn prop="version" label="版本" />
-          <ElTableColumn prop="createdByName" label="创建人" />
-          <ElTableColumn prop="createTime" label="创建时间" />
-          <ElTableColumn label="操作">
-            <template #default="scope">
-              <ElButton type="primary" size="small" icon="Refresh" @click="handleCreateVersion(scope.row.id)">发起变更</ElButton>
-              <ElButton type="warning" size="small" icon="Archive" @click="handleArchive(scope.row.id)">归档</ElButton>
-            </template>
-          </ElTableColumn>
-        </ElTable>
-      </ElTabPane>
-      <ElTabPane label="已归档" name="archived">
-        <ElTable :data="filteredData('已归档')" stripe>
-          <ElTableColumn prop="code" label="数据编码" />
-          <ElTableColumn prop="createdByName" label="创建人" />
-          <ElTableColumn prop="createTime" label="创建时间" />
-        </ElTable>
-      </ElTabPane>
-    </ElTabs>
-  </ElCard>
+    <div class="table-card">
+      <ElTabs type="card">
+        <ElTabPane label="全部" name="all">
+          <ElTable :data="filteredData('all')" stripe>
+            <ElTableColumn prop="code" label="数据编码" />
+            <ElTableColumn prop="dataStatus" label="状态">
+              <template #default="scope">
+                <span :class="getStatusClass(scope.row.dataStatus)">{{ scope.row.dataStatus }}</span>
+              </template>
+            </ElTableColumn>
+            <ElTableColumn prop="version" label="版本" width="80" />
+            <ElTableColumn prop="createdByName" label="创建人" />
+            <ElTableColumn prop="createTime" label="创建时间" />
+            <ElTableColumn label="操作" width="320">
+              <template #default="scope">
+                <ElButton v-if="scope.row.dataStatus === '暂存'" type="primary" size="small" @click="openDialog(scope.row)">编辑</ElButton>
+                <ElButton v-if="scope.row.dataStatus === '暂存'" type="success" size="small" @click="handleSubmit(scope.row.id)">提交审核</ElButton>
+                <ElButton v-if="scope.row.dataStatus === '暂存'" type="danger" size="small" @click="handleDelete(scope.row.id)">删除</ElButton>
+                <ElButton v-if="scope.row.dataStatus === '审核中'" type="success" size="small" @click="handleApprove(scope.row.id)">审核通过</ElButton>
+                <ElButton v-if="scope.row.dataStatus === '审核中'" type="danger" size="small" @click="handleReject(scope.row.id)">拒绝</ElButton>
+                <ElButton v-if="scope.row.dataStatus === '审核通过'" type="primary" size="small" @click="handleCreateVersion(scope.row.id)">发起变更</ElButton>
+                <ElButton v-if="scope.row.dataStatus === '审核通过'" type="warning" size="small" @click="handleArchive(scope.row.id)">归档</ElButton>
+              </template>
+            </ElTableColumn>
+          </ElTable>
+        </ElTabPane>
+        <ElTabPane label="暂存" name="draft">
+          <ElTable :data="filteredData('暂存')" stripe>
+            <ElTableColumn prop="code" label="数据编码" />
+            <ElTableColumn prop="createdByName" label="创建人" />
+            <ElTableColumn prop="createTime" label="创建时间" />
+            <ElTableColumn label="操作" width="240">
+              <template #default="scope">
+                <ElButton type="primary" size="small" @click="openDialog(scope.row)">编辑</ElButton>
+                <ElButton type="success" size="small" @click="handleSubmit(scope.row.id)">提交审核</ElButton>
+                <ElButton type="danger" size="small" @click="handleDelete(scope.row.id)">删除</ElButton>
+              </template>
+            </ElTableColumn>
+          </ElTable>
+        </ElTabPane>
+        <ElTabPane label="审核中" name="pending">
+          <ElTable :data="filteredData('审核中')" stripe>
+            <ElTableColumn prop="code" label="数据编码" />
+            <ElTableColumn prop="createdByName" label="创建人" />
+            <ElTableColumn prop="createTime" label="创建时间" />
+            <ElTableColumn label="操作" width="180">
+              <template #default="scope">
+                <ElButton type="success" size="small" @click="handleApprove(scope.row.id)">审核通过</ElButton>
+                <ElButton type="danger" size="small" @click="handleReject(scope.row.id)">拒绝</ElButton>
+              </template>
+            </ElTableColumn>
+          </ElTable>
+        </ElTabPane>
+        <ElTabPane label="审核通过" name="approved">
+          <ElTable :data="filteredData('审核通过')" stripe>
+            <ElTableColumn prop="code" label="数据编码" />
+            <ElTableColumn prop="version" label="版本" width="80" />
+            <ElTableColumn prop="createdByName" label="创建人" />
+            <ElTableColumn prop="createTime" label="创建时间" />
+            <ElTableColumn label="操作" width="180">
+              <template #default="scope">
+                <ElButton type="primary" size="small" @click="handleCreateVersion(scope.row.id)">发起变更</ElButton>
+                <ElButton type="warning" size="small" @click="handleArchive(scope.row.id)">归档</ElButton>
+              </template>
+            </ElTableColumn>
+          </ElTable>
+        </ElTabPane>
+        <ElTabPane label="已归档" name="archived">
+          <ElTable :data="filteredData('已归档')" stripe>
+            <ElTableColumn prop="code" label="数据编码" />
+            <ElTableColumn prop="createdByName" label="创建人" />
+            <ElTableColumn prop="createTime" label="创建时间" />
+          </ElTable>
+        </ElTabPane>
+      </ElTabs>
+    </div>
 
-  <ElDialog title="数据详情" v-model="dialogVisible" width="500px">
-    <ElForm :model="form" label-width="100px">
-      <ElFormItem label="数据编码" required>
-        <ElInput v-model="form.code" />
-      </ElFormItem>
-      <ElFormItem label="版本">
-        <ElInput v-model="form.version" type="number" />
-      </ElFormItem>
-      <ElFormItem label="数据内容">
-        <ElInput v-model="form.jsonData" type="textarea" :rows="5" />
-      </ElFormItem>
-    </ElForm>
-    <template #footer>
-      <ElButton @click="dialogVisible = false">取消</ElButton>
-      <ElButton type="primary" @click="saveMainData">保存</ElButton>
-    </template>
-  </ElDialog>
+    <ElDialog title="数据详情" v-model="dialogVisible" width="500px">
+      <ElForm :model="form" label-width="100px">
+        <ElFormItem label="数据编码" required>
+          <ElInput v-model="form.code" />
+        </ElFormItem>
+        <ElFormItem label="版本">
+          <ElInput v-model="form.version" type="number" />
+        </ElFormItem>
+        <ElFormItem label="数据内容">
+          <ElInput v-model="form.jsonData" type="textarea" :rows="5" />
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="dialogVisible = false">取消</ElButton>
+        <ElButton type="primary" @click="saveMainData">保存</ElButton>
+      </template>
+    </ElDialog>
+  </div>
 </template>
 
-<style scoped>
-.card {
-  margin-bottom: 20px;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.status-approved {
-  color: #67c23a;
-  background: #e8f5e9;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.status-pending {
-  color: #e6a23c;
-  background: #fdf6ec;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.status-draft {
-  color: #909399;
-  background: #f5f5f5;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.status-rejected {
-  color: #f56c6c;
-  background: #fef0f0;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.status-archived {
-  color: #606266;
-  background: #e4e7ed;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
+<style scoped lang="scss">
 </style>

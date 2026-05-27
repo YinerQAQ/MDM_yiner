@@ -11,6 +11,23 @@ export const useAuthStore = defineStore('auth', () => {
   const roles = ref<string[]>([])
   const permissions = ref<string[]>([])
 
+  // 检查 token 是否过期
+  const isTokenExpired = (t: string): boolean => {
+    if (!t) return true
+    try {
+      const payload = JSON.parse(atob(t.split('.')[1]))
+      return payload.exp * 1000 < Date.now()
+    } catch {
+      return true
+    }
+  }
+
+  // 初始化时如果 token 过期则清除
+  if (token.value && isTokenExpired(token.value)) {
+    token.value = ''
+    localStorage.removeItem('token')
+  }
+
   const login = async (loginUsername: string, loginPassword: string) => {
     const response = await apiLogin({ username: loginUsername, password: loginPassword })
     const data = response.data.data
@@ -25,7 +42,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const logout = async () => {
-    await apiLogout()
+    try {
+      await apiLogout()
+    } catch {
+      // 忽略登出接口错误
+    }
+    clearAuth()
+  }
+
+  const clearAuth = () => {
     token.value = ''
     username.value = ''
     nickname.value = ''
@@ -37,7 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const isLoggedIn = () => {
-    return token.value !== ''
+    return token.value !== '' && !isTokenExpired(token.value)
   }
 
   return {
@@ -50,6 +75,7 @@ export const useAuthStore = defineStore('auth', () => {
     permissions,
     login,
     logout,
+    clearAuth,
     isLoggedIn
   }
 })

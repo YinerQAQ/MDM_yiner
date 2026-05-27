@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import { useAuthStore } from '@/stores/auth'
 
 const instance = axios.create({
   baseURL: '/api/v1',
@@ -25,8 +26,10 @@ instance.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token')
+      const authStore = useAuthStore()
+      authStore.clearAuth()
       window.location.href = '/login'
+      ElMessage.error('登录已过期，请重新登录')
     } else if (error.response?.data?.message) {
       ElMessage.error(error.response.data.message)
     } else {

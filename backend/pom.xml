@@ -13,7 +13,7 @@
     
     <groupId>com.maike</groupId>
     <artifactId>mdm-system</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
     <name>mdm-system</name>
     <description>MDM主数据管理系统</description>
     
@@ -35,6 +35,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        
+        <!-- Spring Boot Starter AOP -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
         
         <!-- Spring Boot Starter Security -->

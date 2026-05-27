@@ -1,0 +1,55 @@
+:root {
+  // 深色科技感主题
+  --bg-primary: #0d1b2a;
+  --bg-secondary: #1b2838;
+  --bg-tertiary: #243447;
+  --bg-card: rgba(27, 40, 56, 0.8);
+  --bg-sidebar: rgba(13, 27, 42, 0.95);
+  --bg-header: rgba(27, 40, 56, 0.9);
+
+  // 强调色
+  --color-primary: #00d4ff;
+  --color-primary-light: #33ddff;
+  --color-primary-dark: #00a8cc;
+  --color-secondary: #0ea5e9;
+  --color-accent: #6366f1;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #06b6d4;
+
+  // 文字
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-bright: #ffffff;
+
+  // 边框
+  --border-color: rgba(100, 116, 139, 0.3);
+  --border-glow: rgba(0, 212, 255, 0.3);
+
+  // 阴影
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.15);
+
+  // 圆角
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  // 字体
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  // 过渡
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  // 侧边栏
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 60px;
+}

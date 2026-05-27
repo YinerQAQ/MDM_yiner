@@ -1,14 +1,20 @@
 package com.maike.mdm.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.maike.mdm.common.response.ApiResponse;
+import com.maike.mdm.dto.request.WorkflowDesignDTO;
 import com.maike.mdm.entity.MdmWorkflow;
 import com.maike.mdm.entity.MdmWorkflowInstance;
+import com.maike.mdm.entity.MdmWorkflowTask;
 import com.maike.mdm.service.WorkflowService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/workflows")
@@ -90,5 +96,90 @@ public class WorkflowController {
     public ResponseEntity<ApiResponse<List<MdmWorkflowInstance>>> getInstancesByDataId(@PathVariable String dataId) {
         List<MdmWorkflowInstance> instances = workflowService.getInstancesByDataId(dataId);
         return ResponseEntity.ok(ApiResponse.success(instances));
+    }
+
+    // ==================== 流程设计 ====================
+
+    @PostMapping("/{id}/design")
+    public ResponseEntity<ApiResponse<Void>> saveDesign(@PathVariable String id, @RequestBody WorkflowDesignDTO design) {
+        workflowService.saveDesign(id, design);
+        return ResponseEntity.ok(ApiResponse.success("保存流程设计成功", null));
+    }
+
+    @GetMapping("/{id}/design")
+    public ResponseEntity<ApiResponse<WorkflowDesignDTO>> getDesign(@PathVariable String id) {
+        WorkflowDesignDTO design = workflowService.getDesign(id);
+        return ResponseEntity.ok(ApiResponse.success(design));
+    }
+
+    // ==================== 流程绑定 ====================
+
+    @PostMapping("/{id}/bind")
+    public ResponseEntity<ApiResponse<Void>> bindToModel(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body) {
+        workflowService.bindToModel(id, body.get("modelId"), body.get("orgId"));
+        return ResponseEntity.ok(ApiResponse.success("绑定成功", null));
+    }
+
+    // ==================== 审核任务管理 ====================
+
+    @GetMapping("/tasks/mine")
+    public ResponseEntity<ApiResponse<Page<MdmWorkflowTask>>> getMyTasks(
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "1") long current,
+            @RequestParam(defaultValue = "10") long size) {
+        if (userId == null || userId.isEmpty()) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) {
+                userId = auth.getName();
+            } else {
+                userId = "admin";
+            }
+        }
+        Page<MdmWorkflowTask> page = new Page<>(current, size);
+        Page<MdmWorkflowTask> result = workflowService.getMyTasks(userId, status, page);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    @PostMapping("/tasks/{taskId}/approve")
+    public ResponseEntity<ApiResponse<Void>> approveTask(
+            @PathVariable String taskId,
+            @RequestBody(required = false) Map<String, String> body) {
+        String opinion = body != null ? body.get("opinion") : null;
+        workflowService.approveTask(taskId, opinion);
+        return ResponseEntity.ok(ApiResponse.success("审核通过", null));
+    }
+
+    @PostMapping("/tasks/{taskId}/reject")
+    public ResponseEntity<ApiResponse<Void>> rejectTask(
+            @PathVariable String taskId,
+            @RequestBody(required = false) Map<String, String> body) {
+        String opinion = body != null ? body.get("opinion") : null;
+        workflowService.rejectTask(taskId, opinion);
+        return ResponseEntity.ok(ApiResponse.success("审核拒绝", null));
+    }
+
+    @PostMapping("/tasks/{taskId}/transfer")
+    public ResponseEntity<ApiResponse<Void>> transferTask(
+            @PathVariable String taskId,
+            @RequestBody Map<String, String> body) {
+        workflowService.transferTask(taskId, body.get("transferToId"), body.get("transferToName"));
+        return ResponseEntity.ok(ApiResponse.success("转办成功", null));
+    }
+
+    @PostMapping("/tasks/{taskId}/claim")
+    public ResponseEntity<ApiResponse<Void>> claimTask(
+            @PathVariable String taskId,
+            @RequestBody Map<String, String> body) {
+        workflowService.claimTask(taskId, body.get("userId"), body.get("userName"));
+        return ResponseEntity.ok(ApiResponse.success("认领成功", null));
+    }
+
+    @PostMapping("/tasks/{taskId}/unclaim")
+    public ResponseEntity<ApiResponse<Void>> unclaimTask(@PathVariable String taskId) {
+        workflowService.unclaimTask(taskId);
+        return ResponseEntity.ok(ApiResponse.success("取消认领成功", null));
     }
 }

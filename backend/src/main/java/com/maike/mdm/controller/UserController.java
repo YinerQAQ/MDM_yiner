@@ -1,5 +1,6 @@
 package com.maike.mdm.controller;
 
+import com.maike.mdm.common.annotation.AuditLog;
 import com.maike.mdm.common.response.ApiResponse;
 import com.maike.mdm.dto.request.UserCreateRequest;
 import com.maike.mdm.entity.BaseUser;
@@ -18,6 +19,7 @@ public class UserController {
 
     private final UserService userService;
 
+    @AuditLog(operation = "创建用户")
     @PostMapping
     public ResponseEntity<ApiResponse<BaseUser>> createUser(@Valid @RequestBody UserCreateRequest request) {
         BaseUser user = userService.createUser(request);
@@ -36,12 +38,14 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(users));
     }
 
+    @AuditLog(operation = "更新用户")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<BaseUser>> updateUser(@PathVariable String id, @RequestBody UserCreateRequest request) {
         BaseUser user = userService.updateUser(id, request);
         return ResponseEntity.ok(ApiResponse.success("更新成功", user));
     }
 
+    @AuditLog(operation = "删除用户")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable String id) {
         userService.deleteUser(id);

@@ -68,4 +68,10 @@ public class MdmMainData {
 
     @TableField("IS_DELETED")
     private Integer isDeleted;
+
+    @TableField("SUBMIT_DESC")
+    private String submitDesc;
+
+    @TableField("ARCHIVE_TIME")
+    private LocalDateTime archiveTime;
 }

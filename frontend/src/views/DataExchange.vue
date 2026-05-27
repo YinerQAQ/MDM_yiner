@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ElCard, ElTabs, ElTabPane, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElMessage } from 'element-plus'
-
+import { ElTabs, ElTabPane, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElIcon, ElMessage } from 'element-plus'
+import { Tools } from '@element-plus/icons-vue'
 
 interface DistInterface {
   id: string
@@ -68,113 +68,94 @@ const getStatusClass = (status: string): string => {
 </script>
 
 <template>
-  <ElCard title="数据交换管理" class="card">
-    <ElTabs type="card">
-      <ElTabPane label="数据分发" name="dist">
-        <div class="card-header">
-          <ElButton type="primary" icon="Plus" @click="openDialog()">
-            新建分发接口
-          </ElButton>
-        </div>
-        <ElTable :data="interfaces" stripe>
-          <ElTableColumn prop="name" label="接口名称" />
-          <ElTableColumn prop="modelCode" label="关联模型" />
-          <ElTableColumn prop="syncType" label="同步类型">
-            <template #default="scope">
-              <span v-if="scope.row.syncType === '即时'">即时同步</span>
-              <span v-else-if="scope.row.syncType === '定时'">定时同步</span>
-              <span v-else>手动同步</span>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn prop="status" label="状态">
-            <template #default="scope">
-              <span :class="getStatusClass(scope.row.status)">
-                {{ scope.row.status }}
-              </span>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn label="操作">
-            <template #default="scope">
-              <ElButton type="primary" size="small" icon="Edit">编辑</ElButton>
-              <ElButton type="danger" size="small" icon="Delete" @click="handleDelete(scope.row.id)">删除</ElButton>
-            </template>
-          </ElTableColumn>
-        </ElTable>
-      </ElTabPane>
-      <ElTabPane label="数据接收" name="receive">
-        <div class="empty-content">
-          <p>数据接收功能开发中...</p>
-        </div>
-      </ElTabPane>
-      <ElTabPane label="服务监控" name="monitor">
-        <div class="empty-content">
-          <p>服务监控功能开发中...</p>
-        </div>
-      </ElTabPane>
-    </ElTabs>
-  </ElCard>
+  <div class="page-container">
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">数据交换</h2>
+        <p class="page-desc">管理数据分发接口与服务监控</p>
+      </div>
+    </div>
 
-  <ElDialog title="分发接口配置" v-model="dialogVisible" width="500px">
-    <ElForm :model="form" label-width="100px">
-      <ElFormItem label="接口名称" required>
-        <ElInput v-model="form.name" />
-      </ElFormItem>
-      <ElFormItem label="关联模型" required>
-        <ElInput v-model="form.modelCode" />
-      </ElFormItem>
-      <ElFormItem label="同步类型">
-        <ElSelect v-model="form.syncType">
-          <ElOption label="即时同步" value="即时" />
-          <ElOption label="定时同步" value="定时" />
-          <ElOption label="手动同步" value="手动" />
-        </ElSelect>
-      </ElFormItem>
-      <ElFormItem label="状态">
-        <ElSelect v-model="form.status">
-          <ElOption label="启用" value="启用" />
-          <ElOption label="停用" value="停用" />
-        </ElSelect>
-      </ElFormItem>
-    </ElForm>
-    <template #footer>
-      <ElButton @click="dialogVisible = false">取消</ElButton>
-      <ElButton type="primary" @click="saveInterface">保存</ElButton>
-    </template>
-  </ElDialog>
+    <div class="table-card">
+      <ElTabs type="card">
+        <ElTabPane label="数据分发" name="dist">
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+            <ElButton type="primary" @click="openDialog()">新建分发接口</ElButton>
+          </div>
+          <ElTable :data="interfaces" stripe>
+            <ElTableColumn prop="name" label="接口名称" />
+            <ElTableColumn prop="modelCode" label="关联模型" />
+            <ElTableColumn prop="syncType" label="同步类型">
+              <template #default="scope">
+                <span v-if="scope.row.syncType === '即时'">即时同步</span>
+                <span v-else-if="scope.row.syncType === '定时'">定时同步</span>
+                <span v-else>手动同步</span>
+              </template>
+            </ElTableColumn>
+            <ElTableColumn prop="status" label="状态">
+              <template #default="scope">
+                <span :class="getStatusClass(scope.row.status)">{{ scope.row.status }}</span>
+              </template>
+            </ElTableColumn>
+            <ElTableColumn label="操作" width="160">
+              <template #default="scope">
+                <ElButton type="primary" size="small">编辑</ElButton>
+                <ElButton type="danger" size="small" @click="handleDelete(scope.row.id)">删除</ElButton>
+              </template>
+            </ElTableColumn>
+          </ElTable>
+        </ElTabPane>
+        <ElTabPane label="数据接收" name="receive">
+          <div class="empty-content">
+            <ElIcon :size="48" color="var(--text-muted)"><Tools /></ElIcon>
+            <p style="margin-top: 16px; color: var(--text-secondary);">数据接收功能开发中...</p>
+          </div>
+        </ElTabPane>
+        <ElTabPane label="服务监控" name="monitor">
+          <div class="empty-content">
+            <ElIcon :size="48" color="var(--text-muted)"><Tools /></ElIcon>
+            <p style="margin-top: 16px; color: var(--text-secondary);">服务监控功能开发中...</p>
+          </div>
+        </ElTabPane>
+      </ElTabs>
+    </div>
+
+    <ElDialog title="分发接口配置" v-model="dialogVisible" width="500px">
+      <ElForm :model="form" label-width="100px">
+        <ElFormItem label="接口名称" required>
+          <ElInput v-model="form.name" />
+        </ElFormItem>
+        <ElFormItem label="关联模型" required>
+          <ElInput v-model="form.modelCode" />
+        </ElFormItem>
+        <ElFormItem label="同步类型">
+          <ElSelect v-model="form.syncType">
+            <ElOption label="即时同步" value="即时" />
+            <ElOption label="定时同步" value="定时" />
+            <ElOption label="手动同步" value="手动" />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="状态">
+          <ElSelect v-model="form.status">
+            <ElOption label="启用" value="启用" />
+            <ElOption label="停用" value="停用" />
+          </ElSelect>
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="dialogVisible = false">取消</ElButton>
+        <ElButton type="primary" @click="saveInterface">保存</ElButton>
+      </template>
+    </ElDialog>
+  </div>
 </template>
 
-<style scoped>
-.card {
-  margin-bottom: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-}
-
+<style scoped lang="scss">
 .empty-content {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 100px 0;
-  color: #909399;
-}
-
-.status-active {
-  color: #67c23a;
-  background: #e8f5e9;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.status-inactive {
-  color: #f56c6c;
-  background: #fef0f0;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
 }
 </style>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import {
-  ElCard,
   ElTable,
   ElTableColumn,
   ElButton,
@@ -147,14 +146,10 @@ const handleResetPassword = async (id: string) => {
 
 const getStatusClass = (status: string): string => {
   switch (status) {
-    case '启用':
-      return 'status-active'
-    case '停用':
-      return 'status-inactive'
-    case '锁定':
-      return 'status-locked'
-    default:
-      return ''
+    case '启用': return 'status-active'
+    case '停用': return 'status-inactive'
+    case '锁定': return 'status-locked'
+    default: return ''
   }
 }
 
@@ -165,113 +160,85 @@ onMounted(() => {
 </script>
 
 <template>
-  <ElCard title="用户管理" class="card">
-    <div class="card-header">
-      <ElButton type="primary" icon="Plus" @click="openDialog()">
-        新建用户
-      </ElButton>
+  <div class="page-container">
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">用户管理</h2>
+        <p class="page-desc">管理系统用户账号、权限与状态</p>
+      </div>
+      <ElButton type="primary" @click="openDialog()">新建用户</ElButton>
     </div>
-    <ElTable :data="users" stripe>
-      <ElTableColumn prop="id" label="用户编码" />
-      <ElTableColumn prop="username" label="用户名" />
-      <ElTableColumn prop="nickname" label="昵称" />
-      <ElTableColumn prop="orgName" label="所属单位" />
-      <ElTableColumn prop="email" label="邮箱" />
-      <ElTableColumn prop="phone" label="手机" />
-      <ElTableColumn prop="status" label="状态">
-        <template #default="scope">
-          <span :class="getStatusClass(scope.row.status)">
-            {{ scope.row.status }}
-          </span>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn label="操作">
-        <template #default="scope">
-          <ElButton type="primary" size="small" icon="Edit" @click="openDialog(scope.row)">编辑</ElButton>
-          <ElButton type="warning" size="small" icon="PowerOff" @click="handleStatusChange(scope.row.id, scope.row.status === '启用' ? '停用' : '启用')">
-            {{ scope.row.status === '启用' ? '停用' : '启用' }}
-          </ElButton>
-          <ElButton type="info" size="small" icon="Key" @click="handleResetPassword(scope.row.id)">重置密码</ElButton>
-          <ElButton type="danger" size="small" icon="Delete" @click="handleDelete(scope.row.id)">删除</ElButton>
-        </template>
-      </ElTableColumn>
-    </ElTable>
-  </ElCard>
 
-  <ElDialog title="用户信息" v-model="dialogVisible" width="500px">
-    <ElForm :model="form" label-width="100px">
-      <ElFormItem label="用户编码" required>
-        <ElInput v-model="form.id" :disabled="isEdit" />
-      </ElFormItem>
-      <ElFormItem label="用户名" required>
-        <ElInput v-model="form.username" />
-      </ElFormItem>
-      <ElFormItem :label="isEdit ? '新密码' : '密码'" :required="!isEdit">
-        <ElInput v-model="form.password" type="password" placeholder="不填则保持不变" />
-      </ElFormItem>
-      <ElFormItem label="昵称">
-        <ElInput v-model="form.nickname" />
-      </ElFormItem>
-      <ElFormItem label="性别">
-        <ElSelect v-model="form.sex">
-          <ElOption label="男" value="男" />
-          <ElOption label="女" value="女" />
-        </ElSelect>
-      </ElFormItem>
-      <ElFormItem label="所属单位">
-        <ElSelect v-model="form.orgId">
-          <ElOption v-for="org in orgs" :key="org.id" :label="org.orgName" :value="org.id" />
-        </ElSelect>
-      </ElFormItem>
-      <ElFormItem label="邮箱">
-        <ElInput v-model="form.email" />
-      </ElFormItem>
-      <ElFormItem label="手机">
-        <ElInput v-model="form.phone" />
-      </ElFormItem>
-      <ElFormItem label="密级">
-        <ElInput v-model="form.securityLevel" />
-      </ElFormItem>
-    </ElForm>
-    <template #footer>
-      <ElButton @click="dialogVisible = false">取消</ElButton>
-      <ElButton type="primary" @click="saveUser">保存</ElButton>
-    </template>
-  </ElDialog>
+    <div class="table-card">
+      <ElTable :data="users" stripe>
+        <ElTableColumn prop="id" label="用户编码" />
+        <ElTableColumn prop="username" label="用户名" />
+        <ElTableColumn prop="nickname" label="昵称" />
+        <ElTableColumn prop="orgName" label="所属单位" />
+        <ElTableColumn prop="email" label="邮箱" />
+        <ElTableColumn prop="phone" label="手机" />
+        <ElTableColumn prop="status" label="状态">
+          <template #default="scope">
+            <span :class="getStatusClass(scope.row.status)">
+              {{ scope.row.status }}
+            </span>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn label="操作" width="280">
+          <template #default="scope">
+            <ElButton type="primary" size="small" @click="openDialog(scope.row)">编辑</ElButton>
+            <ElButton type="warning" size="small" @click="handleStatusChange(scope.row.id, scope.row.status === '启用' ? '停用' : '启用')">
+              {{ scope.row.status === '启用' ? '停用' : '启用' }}
+            </ElButton>
+            <ElButton size="small" @click="handleResetPassword(scope.row.id)">重置密码</ElButton>
+            <ElButton type="danger" size="small" @click="handleDelete(scope.row.id)">删除</ElButton>
+          </template>
+        </ElTableColumn>
+      </ElTable>
+    </div>
+
+    <ElDialog title="用户信息" v-model="dialogVisible" width="500px">
+      <ElForm :model="form" label-width="100px">
+        <ElFormItem label="用户编码" required>
+          <ElInput v-model="form.id" :disabled="isEdit" />
+        </ElFormItem>
+        <ElFormItem label="用户名" required>
+          <ElInput v-model="form.username" />
+        </ElFormItem>
+        <ElFormItem :label="isEdit ? '新密码' : '密码'" :required="!isEdit">
+          <ElInput v-model="form.password" type="password" placeholder="不填则保持不变" />
+        </ElFormItem>
+        <ElFormItem label="昵称">
+          <ElInput v-model="form.nickname" />
+        </ElFormItem>
+        <ElFormItem label="性别">
+          <ElSelect v-model="form.sex">
+            <ElOption label="男" value="男" />
+            <ElOption label="女" value="女" />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="所属单位">
+          <ElSelect v-model="form.orgId">
+            <ElOption v-for="org in orgs" :key="org.id" :label="org.orgName" :value="org.id" />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="邮箱">
+          <ElInput v-model="form.email" />
+        </ElFormItem>
+        <ElFormItem label="手机">
+          <ElInput v-model="form.phone" />
+        </ElFormItem>
+        <ElFormItem label="密级">
+          <ElInput v-model="form.securityLevel" />
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="dialogVisible = false">取消</ElButton>
+        <ElButton type="primary" @click="saveUser">保存</ElButton>
+      </template>
+    </ElDialog>
+  </div>
 </template>
 
-<style scoped>
-.card {
-  margin-bottom: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-}
-
-.status-active {
-  color: #67c23a;
-  background: #e8f5e9;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.status-inactive {
-  color: #f56c6c;
-  background: #fef0f0;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.status-locked {
-  color: #e6a23c;
-  background: #fdf6ec;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
+<style scoped lang="scss">
 </style>

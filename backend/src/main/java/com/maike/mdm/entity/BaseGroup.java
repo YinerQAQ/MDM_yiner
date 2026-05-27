@@ -19,10 +19,10 @@ public class BaseGroup {
     @TableId(value = "ID", type = IdType.INPUT)
     private String id;
 
-    @TableField("GROUPCODE")
+    @TableField("GROUP_CODE")
     private String groupCode;
 
-    @TableField("GROUPNAME")
+    @TableField("GROUP_NAME")
     private String groupName;
 
     @TableField("ORGID")
@@ -30,4 +30,10 @@ public class BaseGroup {
 
     @TableField("STATUS")
     private String status;
+
+    @TableField("CREATE_TIME")
+    private java.time.LocalDateTime createTime;
+
+    @TableField("UPDATE_TIME")
+    private java.time.LocalDateTime updateTime;
 }

@@ -2,6 +2,7 @@ package com.maike.mdm.controller;
 
 import com.maike.mdm.common.response.ApiResponse;
 import com.maike.mdm.entity.MdmDataModel;
+import com.maike.mdm.entity.MdmModelAttribute;
 import com.maike.mdm.service.DataModelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,8 @@ import java.util.List;
 public class DataModelController {
 
     private final DataModelService dataModelService;
+
+    // ==================== 模型基本CRUD ====================
 
     @PostMapping
     public ResponseEntity<ApiResponse<MdmDataModel>> createModel(@RequestBody MdmDataModel model) {
@@ -46,6 +49,8 @@ public class DataModelController {
         return ResponseEntity.ok(ApiResponse.success("删除成功", null));
     }
 
+    // ==================== 模型状态机 ====================
+
     @PostMapping("/{id}/submit")
     public ResponseEntity<ApiResponse<Void>> submitForReview(@PathVariable String id) {
         dataModelService.submitForReview(id);
@@ -62,5 +67,46 @@ public class DataModelController {
     public ResponseEntity<ApiResponse<Void>> rejectModel(@PathVariable String id) {
         dataModelService.rejectModel(id);
         return ResponseEntity.ok(ApiResponse.success("已拒绝", null));
+    }
+
+    @PostMapping("/{id}/publish")
+    public ResponseEntity<ApiResponse<Void>> publishModel(@PathVariable String id) {
+        dataModelService.publishModel(id);
+        return ResponseEntity.ok(ApiResponse.success("发布成功", null));
+    }
+
+    @PostMapping("/{id}/change")
+    public ResponseEntity<ApiResponse<MdmDataModel>> changeModel(@PathVariable String id) {
+        MdmDataModel newModel = dataModelService.changeModel(id);
+        return ResponseEntity.ok(ApiResponse.success("已发起模型变更", newModel));
+    }
+
+    // ==================== 模型属性管理 ====================
+
+    @PostMapping("/{id}/attributes")
+    public ResponseEntity<ApiResponse<MdmModelAttribute>> addAttribute(
+            @PathVariable String id, @RequestBody MdmModelAttribute attribute) {
+        MdmModelAttribute created = dataModelService.addAttribute(id, attribute);
+        return ResponseEntity.ok(ApiResponse.success("添加属性成功", created));
+    }
+
+    @PutMapping("/{id}/attributes/{attrId}")
+    public ResponseEntity<ApiResponse<MdmModelAttribute>> updateAttribute(
+            @PathVariable String id, @PathVariable String attrId, @RequestBody MdmModelAttribute attribute) {
+        MdmModelAttribute updated = dataModelService.updateAttribute(id, attrId, attribute);
+        return ResponseEntity.ok(ApiResponse.success("更新属性成功", updated));
+    }
+
+    @DeleteMapping("/{id}/attributes/{attrId}")
+    public ResponseEntity<ApiResponse<Void>> deleteAttribute(
+            @PathVariable String id, @PathVariable String attrId) {
+        dataModelService.deleteAttribute(id, attrId);
+        return ResponseEntity.ok(ApiResponse.success("删除属性成功", null));
+    }
+
+    @GetMapping("/{id}/attributes")
+    public ResponseEntity<ApiResponse<List<MdmModelAttribute>>> getAttributes(@PathVariable String id) {
+        List<MdmModelAttribute> attributes = dataModelService.getAttributesByModelId(id);
+        return ResponseEntity.ok(ApiResponse.success(attributes));
     }
 }

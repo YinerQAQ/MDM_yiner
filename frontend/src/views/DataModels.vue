@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import {
-  ElCard,
   ElTable,
   ElTableColumn,
   ElButton,
@@ -136,27 +135,19 @@ const handleReject = async (id: string) => {
 
 const getStatusClass = (status: string): string => {
   switch (status) {
-    case '已发布':
-      return 'status-approved'
-    case '审核中':
-      return 'status-pending'
-    case '编制中':
-      return 'status-draft'
-    default:
-      return ''
+    case '已发布': return 'status-approved'
+    case '审核中': return 'status-pending'
+    case '编制中': return 'status-draft'
+    default: return ''
   }
 }
 
 const getActions = (status: string): string[] => {
   switch (status) {
-    case '编制中':
-      return ['edit', 'submit', 'delete']
-    case '审核中':
-      return ['approve', 'reject']
-    case '已发布':
-      return ['edit']
-    default:
-      return []
+    case '编制中': return ['edit', 'submit', 'delete']
+    case '审核中': return ['approve', 'reject']
+    case '已发布': return ['edit']
+    default: return []
   }
 }
 
@@ -166,141 +157,98 @@ onMounted(() => {
 </script>
 
 <template>
-  <ElCard title="数据模型管理" class="card">
-    <div class="card-header">
-      <ElButton type="primary" icon="Plus" @click="openDialog()">
-        新建模型
-      </ElButton>
+  <div class="page-container">
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">数据模型管理</h2>
+        <p class="page-desc">定义和管理主数据模型结构</p>
+      </div>
+      <ElButton type="primary" @click="openDialog()">新建模型</ElButton>
     </div>
-    <ElTable :data="models" stripe>
-      <ElTableColumn prop="modelCode" label="模型编码" />
-      <ElTableColumn prop="modelName" label="模型名称" />
-      <ElTableColumn prop="modelType" label="模型类型">
-        <template #default="scope">
-          <span v-if="scope.row.modelType === '普通'">普通模型</span>
-          <span v-else-if="scope.row.modelType === '类别'">类别模型</span>
-          <span v-else>引用分类模型</span>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn prop="status" label="状态">
-        <template #default="scope">
-          <span :class="getStatusClass(scope.row.status)">
-            {{ scope.row.status }}
-          </span>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn prop="version" label="版本" />
-      <ElTableColumn prop="description" label="描述" />
-      <ElTableColumn label="操作">
-        <template #default="scope">
-          <ElButton
-            v-if="getActions(scope.row.status).includes('edit')"
-            type="primary"
-            size="small"
-            icon="Edit"
-            @click="openDialog(scope.row)"
-          >
-            编辑
-          </ElButton>
-          <ElButton
-            v-if="getActions(scope.row.status).includes('submit')"
-            type="success"
-            size="small"
-            icon="Check"
-            @click="handleSubmit(scope.row.id)"
-          >
-            提交审核
-          </ElButton>
-          <ElButton
-            v-if="getActions(scope.row.status).includes('approve')"
-            type="success"
-            size="small"
-            icon="Check"
-            @click="handleApprove(scope.row.id)"
-          >
-            审核通过
-          </ElButton>
-          <ElButton
-            v-if="getActions(scope.row.status).includes('reject')"
-            type="danger"
-            size="small"
-            icon="X"
-            @click="handleReject(scope.row.id)"
-          >
-            拒绝
-          </ElButton>
-          <ElButton
-            v-if="getActions(scope.row.status).includes('delete')"
-            type="danger"
-            size="small"
-            icon="Delete"
-            @click="handleDelete(scope.row.id)"
-          >
-            删除
-          </ElButton>
-        </template>
-      </ElTableColumn>
-    </ElTable>
-  </ElCard>
 
-  <ElDialog title="模型信息" v-model="dialogVisible" width="500px">
-    <ElForm :model="form" label-width="100px">
-      <ElFormItem label="模型编码" required>
-        <ElInput v-model="form.modelCode" :disabled="isEdit" />
-      </ElFormItem>
-      <ElFormItem label="模型名称" required>
-        <ElInput v-model="form.modelName" />
-      </ElFormItem>
-      <ElFormItem label="模型类型">
-        <ElSelect v-model="form.modelType">
-          <ElOption label="普通模型" value="普通" />
-          <ElOption label="类别模型" value="类别" />
-          <ElOption label="引用分类模型" value="引用分类" />
-        </ElSelect>
-      </ElFormItem>
-      <ElFormItem label="描述">
-        <ElInput v-model="form.description" type="textarea" :rows="3" />
-      </ElFormItem>
-    </ElForm>
-    <template #footer>
-      <ElButton @click="dialogVisible = false">取消</ElButton>
-      <ElButton type="primary" @click="saveModel">保存</ElButton>
-    </template>
-  </ElDialog>
+    <div class="table-card">
+      <ElTable :data="models" stripe>
+        <ElTableColumn prop="modelCode" label="模型编码" />
+        <ElTableColumn prop="modelName" label="模型名称" />
+        <ElTableColumn prop="modelType" label="模型类型">
+          <template #default="scope">
+            <span v-if="scope.row.modelType === '普通'">普通模型</span>
+            <span v-else-if="scope.row.modelType === '类别'">类别模型</span>
+            <span v-else>引用分类模型</span>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="status" label="状态">
+          <template #default="scope">
+            <span :class="getStatusClass(scope.row.status)">
+              {{ scope.row.status }}
+            </span>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="version" label="版本" width="80" />
+        <ElTableColumn prop="description" label="描述" />
+        <ElTableColumn label="操作" width="300">
+          <template #default="scope">
+            <ElButton
+              v-if="getActions(scope.row.status).includes('edit')"
+              type="primary"
+              size="small"
+              @click="openDialog(scope.row)"
+            >编辑</ElButton>
+            <ElButton
+              v-if="getActions(scope.row.status).includes('submit')"
+              type="success"
+              size="small"
+              @click="handleSubmit(scope.row.id)"
+            >提交审核</ElButton>
+            <ElButton
+              v-if="getActions(scope.row.status).includes('approve')"
+              type="success"
+              size="small"
+              @click="handleApprove(scope.row.id)"
+            >审核通过</ElButton>
+            <ElButton
+              v-if="getActions(scope.row.status).includes('reject')"
+              type="danger"
+              size="small"
+              @click="handleReject(scope.row.id)"
+            >拒绝</ElButton>
+            <ElButton
+              v-if="getActions(scope.row.status).includes('delete')"
+              type="danger"
+              size="small"
+              @click="handleDelete(scope.row.id)"
+            >删除</ElButton>
+          </template>
+        </ElTableColumn>
+      </ElTable>
+    </div>
+
+    <ElDialog title="模型信息" v-model="dialogVisible" width="500px">
+      <ElForm :model="form" label-width="100px">
+        <ElFormItem label="模型编码" required>
+          <ElInput v-model="form.modelCode" :disabled="isEdit" />
+        </ElFormItem>
+        <ElFormItem label="模型名称" required>
+          <ElInput v-model="form.modelName" />
+        </ElFormItem>
+        <ElFormItem label="模型类型">
+          <ElSelect v-model="form.modelType">
+            <ElOption label="普通模型" value="普通" />
+            <ElOption label="类别模型" value="类别" />
+            <ElOption label="引用分类模型" value="引用分类" />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="描述">
+          <ElInput v-model="form.description" type="textarea" :rows="3" />
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="dialogVisible = false">取消</ElButton>
+        <ElButton type="primary" @click="saveModel">保存</ElButton>
+      </template>
+    </ElDialog>
+  </div>
 </template>
 
-<style scoped>
-.card {
-  margin-bottom: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-}
-
-.status-approved {
-  color: #67c23a;
-  background: #e8f5e9;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.status-pending {
-  color: #e6a23c;
-  background: #fdf6ec;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.status-draft {
-  color: #909399;
-  background: #f5f5f5;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
+<style scoped lang="scss">
 </style>
