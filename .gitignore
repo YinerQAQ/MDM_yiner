@@ -27,6 +27,9 @@ Thumbs.db
 *.env
 .env.*
 
+# Docs (private)
+docs/
+
 # Agent skills
 .agents/
 skills-lock.json
