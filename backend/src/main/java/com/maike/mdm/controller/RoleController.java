@@ -6,6 +6,7 @@ import com.maike.mdm.entity.BaseUser;
 import com.maike.mdm.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,18 +18,21 @@ public class RoleController {
 
     private final RoleService roleService;
 
+    @PreAuthorize("hasAuthority('menu:system:role')")
     @GetMapping
     public ResponseEntity<ApiResponse<List<BaseRole>>> listRoles() {
         List<BaseRole> roles = roleService.listRoles();
         return ResponseEntity.ok(ApiResponse.success(roles));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:role')")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createRole(@RequestBody BaseRole role) {
         roleService.createRole(role);
         return ResponseEntity.ok(ApiResponse.success("创建成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:role')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateRole(@PathVariable String id, @RequestBody BaseRole role) {
         role.setId(id);
@@ -36,6 +40,7 @@ public class RoleController {
         return ResponseEntity.ok(ApiResponse.success("更新成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:role')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable String id) {
         roleService.deleteRole(id);

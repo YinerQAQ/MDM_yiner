@@ -5,6 +5,7 @@ import com.maike.mdm.entity.SysParam;
 import com.maike.mdm.service.SysParamService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +29,7 @@ public class SysParamController {
         return ResponseEntity.ok(ApiResponse.success(value));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:param')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateParam(@PathVariable String id, @RequestBody SysParam param) {
         param.setId(id);

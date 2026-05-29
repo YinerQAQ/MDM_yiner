@@ -130,7 +130,7 @@ onMounted(() => {
             <el-input-number
               v-else-if="isNumericParam(param)"
               :model-value="getNumericValue(param)"
-              @update:model-value="(val: number | undefined) => setNumericValue(param, val)"
+              @update:model-value="(val: any) => setNumericValue(param, val)"
               :min="0"
               controls-position="right"
               style="width: 100%"

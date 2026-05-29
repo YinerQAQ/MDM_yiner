@@ -11,13 +11,13 @@
 
 ## 功能亮点
 
-| 模块 | 核心能力 | 关键特性 |
-|------|---------|---------|
-| **数据标准管理** | 模型设计器、编码规则引擎、约束规则校验 | 可视化模型设计、多段编码规则、属性约束校验 |
-| **数据业务管理** | 全生命周期管理 | 申请→审核→发布→变更→归档，版本对比 |
-| **工作流引擎** | 可视化流程设计 | 多节点审批、转办/认领/会签、流程实例追踪 |
-| **数据交换（ESB）** | 系统注册、分发策略 | 同步/异步分发、重试监控、异常处理 |
-| **管理中心** | RBAC 权限体系 | 用户/角色/组织/群组、菜单管理、数据字典、审计日志、系统参数 |
+| 模块                      | 核心能力                               | 关键特性                                                    |
+| ------------------------- | -------------------------------------- | ----------------------------------------------------------- |
+| **数据标准管理**    | 模型设计器、编码规则引擎、约束规则校验 | 可视化模型设计、多段编码规则、属性约束校验                  |
+| **数据业务管理**    | 全生命周期管理                         | 申请→审核→发布→变更→归档，版本对比                      |
+| **工作流引擎**      | 可视化流程设计                         | 多节点审批、转办/认领/会签、流程实例追踪                    |
+| **数据交换（ESB）** | 系统注册、分发策略                     | 同步/异步分发、重试监控、异常处理                           |
+| **管理中心**        | RBAC 权限体系                          | 用户/角色/组织/群组、菜单管理、数据字典、审计日志、系统参数 |
 
 ## 技术架构
 
@@ -108,22 +108,22 @@ npm run dev
 
 ### 默认账号
 
-| 用户名 | 密码 | 说明 |
-|--------|------|------|
-| admin | admin | 系统管理员 |
+| 用户名 | 密码  | 说明       |
+| ------ | ----- | ---------- |
+| admin  | admin | 系统管理员 |
 
 ## 数据库说明
 
 系统共 **37** 张数据表，按业务领域分类：
 
-| 分类 | 表名 | 说明 |
-|------|------|------|
-| **用户与权限** | base_user, base_role, base_menu, base_org, base_group, base_user_role, base_user_group, base_role_menu, base_group_org | RBAC 权限体系 |
-| **数据标准** | mdm_data_model, mdm_model_attribute, mdm_model_constraint, mdm_code_rule, mdm_code_scheme, mdm_code_segment, mdm_code_record | 模型、编码、约束 |
-| **主数据** | mdm_main_data, mdm_archive_apply, mdm_archive_data | 主数据与归档 |
-| **工作流** | mdm_workflow, mdm_workflow_node, mdm_workflow_edge, mdm_workflow_instance, mdm_workflow_task | 流程定义与实例 |
-| **ESB 交换** | mdm_esb_info_system, mdm_esb_model_dist, mdm_esb_model_dist_content, mdm_esb_model_dist_data, mdm_esb_model_dist_record, mdm_esb_exception | 分发与监控 |
-| **系统管理** | sys_audit_log, sys_login_log, sys_param, base_dict, base_dict_item | 日志、参数、字典 |
+| 分类                 | 表名                                                                                                                                       | 说明             |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| **用户与权限** | base_user, base_role, base_menu, base_org, base_group, base_user_role, base_user_group, base_role_menu, base_group_org                     | RBAC 权限体系    |
+| **数据标准**   | mdm_data_model, mdm_model_attribute, mdm_model_constraint, mdm_code_rule, mdm_code_scheme, mdm_code_segment, mdm_code_record               | 模型、编码、约束 |
+| **主数据**     | mdm_main_data, mdm_archive_apply, mdm_archive_data                                                                                         | 主数据与归档     |
+| **工作流**     | mdm_workflow, mdm_workflow_node, mdm_workflow_edge, mdm_workflow_instance, mdm_workflow_task                                               | 流程定义与实例   |
+| **ESB 交换**   | mdm_esb_info_system, mdm_esb_model_dist, mdm_esb_model_dist_content, mdm_esb_model_dist_data, mdm_esb_model_dist_record, mdm_esb_exception | 分发与监控       |
+| **系统管理**   | sys_audit_log, sys_login_log, sys_param, base_dict, base_dict_item                                                                         | 日志、参数、字典 |
 
 ## API 文档
 

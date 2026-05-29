@@ -227,7 +227,15 @@ const prevStep = () => {
 const saveModel = async () => {
   if (!modelId.value) return
   try {
-    await updateModel(modelId.value, { ...basicForm.value })
+    await updateModel(modelId.value, {
+      id: modelId.value,
+      modelCode: basicForm.value.modelCode,
+      modelName: basicForm.value.modelName,
+      modelType: basicForm.value.modelType,
+      status: model.value?.status || '编制中',
+      version: model.value?.version || 1,
+      description: basicForm.value.description
+    })
     ElMessage.success('保存成功')
     loadModel()
   } catch {
@@ -246,7 +254,7 @@ const submitForReview = async () => {
   }
 }
 
-const publish = async () => {
+const handlePublish = async () => {
   if (!modelId.value) return
   try {
     await publishModel(modelId.value)
@@ -394,6 +402,7 @@ onMounted(() => {
         <el-button v-if="activeStep < 3" type="primary" @click="nextStep">下一步</el-button>
         <el-button type="primary" plain @click="saveModel">保存</el-button>
         <el-button type="success" @click="submitForReview">提交审核</el-button>
+        <el-button type="warning" @click="handlePublish">发布</el-button>
       </div>
     </div>
 

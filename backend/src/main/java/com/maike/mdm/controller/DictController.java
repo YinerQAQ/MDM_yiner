@@ -6,6 +6,7 @@ import com.maike.mdm.entity.BaseDictItem;
 import com.maike.mdm.service.DictService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,12 +30,14 @@ public class DictController {
         return ResponseEntity.ok(ApiResponse.success(items));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:dict')")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createDict(@RequestBody BaseDict dict) {
         dictService.createDict(dict);
         return ResponseEntity.ok(ApiResponse.success("创建成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:dict')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateDict(@PathVariable String id, @RequestBody BaseDict dict) {
         dict.setId(id);
@@ -42,12 +45,14 @@ public class DictController {
         return ResponseEntity.ok(ApiResponse.success("更新成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:dict')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteDict(@PathVariable String id) {
         dictService.deleteDict(id);
         return ResponseEntity.ok(ApiResponse.success("删除成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:dict')")
     @PostMapping("/{dictId}/items")
     public ResponseEntity<ApiResponse<Void>> createDictItem(@PathVariable String dictId, @RequestBody BaseDictItem item) {
         item.setDictId(dictId);
@@ -55,6 +60,7 @@ public class DictController {
         return ResponseEntity.ok(ApiResponse.success("创建成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:dict')")
     @PutMapping("/items/{id}")
     public ResponseEntity<ApiResponse<Void>> updateDictItem(@PathVariable String id, @RequestBody BaseDictItem item) {
         item.setId(id);
@@ -62,6 +68,7 @@ public class DictController {
         return ResponseEntity.ok(ApiResponse.success("更新成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:dict')")
     @DeleteMapping("/items/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteDictItem(@PathVariable String id) {
         dictService.deleteDictItem(id);

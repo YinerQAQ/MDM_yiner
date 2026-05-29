@@ -47,4 +47,10 @@ public class MdmWorkflowInstance {
 
     @TableField("IS_DELETED")
     private Integer isDeleted;
+
+    @TableField("PARALLEL_COUNTER")
+    private String parallelCounter;
+
+    @TableField("ACTIVE_BRANCHES")
+    private String activeBranches;
 }

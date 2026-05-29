@@ -34,6 +34,10 @@ public interface EsbService {
     // 分发执行
     void executeDistribute(String distId, List<String> dataIds);
 
+    void executeDistWithRetry(String distId);
+
+    void retryFromException(String exceptionId);
+
     void addToDistQueue(String distId, String dataId);
 
     // 监控

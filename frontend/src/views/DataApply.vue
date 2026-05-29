@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAllModels } from '../api/models'
-import { getModelAttributes } from '../api/models'
+import { getAllModels, getModelAttributes } from '../api/models'
 import {
   createMainData, updateMainData, deleteMainData, submitData, getMainDataByModelId
 } from '../api/mainData'

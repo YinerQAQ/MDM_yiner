@@ -5,6 +5,8 @@
 *.ear
 target/
 *.log
+log.txt
+log_err.txt
 
 # Node
 node_modules/

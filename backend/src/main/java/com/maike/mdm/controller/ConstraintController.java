@@ -53,4 +53,13 @@ public class ConstraintController {
         List<ConstraintValidationResult> results = constraintService.validateData(modelId, data);
         return ResponseEntity.ok(ApiResponse.success(results));
     }
+
+    @PostMapping("/validate-constraints")
+    public ResponseEntity<ApiResponse<List<String>>> validateConstraints(
+            @PathVariable String modelId,
+            @RequestParam(required = false) String oldDataId,
+            @RequestBody Map<String, Object> data) {
+        List<String> errors = constraintService.validateConstraints(modelId, data, oldDataId);
+        return ResponseEntity.ok(ApiResponse.success(errors));
+    }
 }

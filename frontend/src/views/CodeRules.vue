@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  getCodeRules, getCodeRule, createCodeRule, updateCodeRule, deleteCodeRule,
+  getCodeRules, createCodeRule, updateCodeRule, deleteCodeRule,
   getSchemes, createScheme, updateScheme, deleteScheme,
   getSegments, createSegment, updateSegment, deleteSegment, generateCode
 } from '../api/codeRules'

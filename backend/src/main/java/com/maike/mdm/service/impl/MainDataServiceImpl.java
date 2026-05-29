@@ -601,6 +601,52 @@ public class MainDataServiceImpl implements MainDataService {
         return mainData;
     }
 
+    // ==================== 批量编辑 ====================
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchEdit(List<String> ids, Map<String, Object> fields) {
+        if (ids == null || ids.isEmpty()) {
+            throw BusinessException.of("请选择要编辑的数据");
+        }
+        if (fields == null || fields.isEmpty()) {
+            throw BusinessException.of("请填写要修改的字段");
+        }
+
+        for (String id : ids) {
+            MdmMainData mainData = mdmMainDataMapper.selectById(id);
+            if (mainData == null) {
+                log.warn("批量编辑跳过不存在的数据: {}", id);
+                continue;
+            }
+
+            if (!"暂存".equals(mainData.getDataStatus()) && !"审核拒绝".equals(mainData.getDataStatus())
+                    && !"变更中".equals(mainData.getDataStatus())) {
+                log.warn("批量编辑跳过不可编辑状态的数据: id={}, status={}", id, mainData.getDataStatus());
+                continue;
+            }
+
+            // 合并字段到jsonData
+            Map<String, Object> existingData = parseJsonData(mainData.getJsonData());
+            existingData.putAll(fields);
+
+            try {
+                mainData.setJsonData(objectMapper.writeValueAsString(existingData));
+            } catch (Exception e) {
+                throw BusinessException.of("序列化数据失败: " + e.getMessage());
+            }
+
+            // 也处理顶层字段如securityLevel
+            if (fields.containsKey("securityLevel")) {
+                mainData.setSecurityLevel(fields.get("securityLevel").toString());
+            }
+
+            mainData.setModifyTime(LocalDateTime.now());
+            mdmMainDataMapper.updateById(mainData);
+            log.info("批量编辑数据成功: id={}", id);
+        }
+    }
+
     // ==================== 私有辅助方法 ====================
 
     private Map<String, Object> parseJsonData(String jsonData) {

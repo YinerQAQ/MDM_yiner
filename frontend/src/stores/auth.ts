@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { login as apiLogin, logout as apiLogout } from '@/api/auth'
+import { getMenuTree, getPermissions, type MenuItem } from '@/api/permission'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || '')
@@ -10,6 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
   const orgName = ref('')
   const roles = ref<string[]>([])
   const permissions = ref<string[]>([])
+  const menus = ref<MenuItem[]>([])
 
   // 检查 token 是否过期
   const isTokenExpired = (t: string): boolean => {
@@ -39,6 +41,7 @@ export const useAuthStore = defineStore('auth', () => {
     roles.value = data.roles
     permissions.value = data.permissions
     localStorage.setItem('token', token.value)
+    await fetchPermissions()
   }
 
   const logout = async () => {
@@ -58,11 +61,41 @@ export const useAuthStore = defineStore('auth', () => {
     orgName.value = ''
     roles.value = []
     permissions.value = []
+    menus.value = []
     localStorage.removeItem('token')
+    // 异步导入 router 模块，避免与 router/index.ts 形成循环依赖
+    import('@/router').then(({ resetDynamicRoutes }) => {
+      try { resetDynamicRoutes() } catch { /* ignore */ }
+    }).catch(() => { /* ignore */ })
   }
 
   const isLoggedIn = () => {
     return token.value !== '' && !isTokenExpired(token.value)
+  }
+
+  const hasPermission = (perm: string): boolean => {
+    if (!perm) return true
+    const perms = permissions.value || []
+    if (perms.includes('*')) return true
+    return perms.includes(perm)
+  }
+
+  const menuTree = computed<MenuItem[]>(() => {
+    return menus.value || []
+  })
+
+  const fetchPermissions = async () => {
+    try {
+      const [menuRes, permRes] = await Promise.all([
+        getMenuTree(),
+        getPermissions()
+      ])
+      menus.value = menuRes.data.data || []
+      permissions.value = permRes.data.data || []
+    } catch {
+      menus.value = []
+      permissions.value = []
+    }
   }
 
   return {
@@ -73,9 +106,13 @@ export const useAuthStore = defineStore('auth', () => {
     orgName,
     roles,
     permissions,
+    menus,
     login,
     logout,
     clearAuth,
-    isLoggedIn
+    isLoggedIn,
+    hasPermission,
+    menuTree,
+    fetchPermissions
   }
 })

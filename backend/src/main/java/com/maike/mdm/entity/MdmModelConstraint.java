@@ -45,6 +45,9 @@ public class MdmModelConstraint {
     @TableField("CONFIG_JSON")
     private String configJson;
 
+    @TableField("CONSTRAINT_CONFIG")
+    private String constraintConfig;
+
     @TableField("STATUS")
     private String status;
 

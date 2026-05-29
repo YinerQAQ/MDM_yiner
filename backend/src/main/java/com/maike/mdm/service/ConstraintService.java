@@ -19,4 +19,7 @@ public interface ConstraintService {
 
     // 核心：校验数据
     List<ConstraintValidationResult> validateData(String modelId, Map<String, Object> data);
+
+    // 约束规则引擎：9种约束类型校验
+    List<String> validateConstraints(String modelId, Map<String, Object> data, String oldDataId);
 }

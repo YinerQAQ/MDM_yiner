@@ -44,3 +44,11 @@ export const resetPassword = async (id: string, password: string) => {
     params: { password }
   })
 }
+
+export const getUserRoleIds = async (id: string) => {
+  return instance.get<ApiResponse<string[]>>(`/users/${id}/roles`)
+}
+
+export const assignUserRoles = async (id: string, roleIds: string[]) => {
+  return instance.put<ApiResponse<void>>(`/users/${id}/roles`, roleIds)
+}

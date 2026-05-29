@@ -108,3 +108,14 @@ export interface MdmWorkflowInstance {
   updateTime?: string
   isDeleted?: number
 }
+
+export interface ImportResultResponse {
+  successCount: number
+  failCount: number
+  failures: ImportFailureDetail[]
+}
+
+export interface ImportFailureDetail {
+  rowIndex: number
+  reason: string
+}

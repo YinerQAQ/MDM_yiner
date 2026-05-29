@@ -60,6 +60,9 @@ public class MdmWorkflowNode {
     @TableField("SIGN_THRESHOLD")
     private Integer signThreshold;
 
+    @TableField("SIGN_PERCENT")
+    private Integer signPercent;
+
     @TableField("CLAIM_HOURS")
     private Integer claimHours;
 
@@ -71,6 +74,15 @@ public class MdmWorkflowNode {
 
     @TableField("CALLBACK_SQL")
     private String callbackSql;
+
+    @TableField("ASSIGNEE_STRATEGY")
+    private String assigneeStrategy;
+
+    @TableField("STRATEGY_VALUE")
+    private String strategyValue;
+
+    @TableField("FILTER_SQL")
+    private String filterSql;
 
     @TableField("SORT_ORDER")
     private Integer sortOrder;

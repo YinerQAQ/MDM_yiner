@@ -4,17 +4,26 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.maike.mdm.common.response.ApiResponse;
 import com.maike.mdm.dto.request.ArchiveApplyRequest;
 import com.maike.mdm.dto.request.ArchiveReviewRequest;
+import com.maike.mdm.dto.request.BatchEditRequest;
 import com.maike.mdm.dto.request.SubmitDataRequest;
 import com.maike.mdm.dto.request.VersionCompareRequest;
 import com.maike.mdm.dto.response.ConstraintWarningResponse;
+import com.maike.mdm.dto.response.ImportResultResponse;
 import com.maike.mdm.dto.response.VersionCompareResult;
 import com.maike.mdm.entity.MdmArchiveApply;
 import com.maike.mdm.entity.MdmArchiveData;
 import com.maike.mdm.entity.MdmMainData;
+import com.maike.mdm.service.DataExportService;
+import com.maike.mdm.service.DataImportService;
 import com.maike.mdm.service.MainDataService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,6 +33,8 @@ import java.util.List;
 public class MainDataController {
 
     private final MainDataService mainDataService;
+    private final DataImportService dataImportService;
+    private final DataExportService dataExportService;
 
     // ==================== 数据保存与约束校验 ====================
 
@@ -44,6 +55,7 @@ public class MainDataController {
     /**
      * 提交审核（含编码生成+启动流程）
      */
+    @PreAuthorize("hasAuthority('btn:mainData:submit')")
     @PostMapping("/{id}/submit")
     public ResponseEntity<ApiResponse<MdmMainData>> submitData(
             @PathVariable String id, @RequestBody(required = false) SubmitDataRequest request) {
@@ -54,6 +66,7 @@ public class MainDataController {
     /**
      * 审核通过
      */
+    @PreAuthorize("hasAuthority('btn:mainData:approve') or hasAuthority('btn:dataReview:approve')")
     @PostMapping("/{id}/approve")
     public ResponseEntity<ApiResponse<MdmMainData>> approveData(@PathVariable String id) {
         MdmMainData result = mainDataService.approveData(id);
@@ -63,6 +76,7 @@ public class MainDataController {
     /**
      * 审核拒绝
      */
+    @PreAuthorize("hasAuthority('btn:mainData:reject') or hasAuthority('btn:dataReview:reject')")
     @PostMapping("/{id}/reject")
     public ResponseEntity<ApiResponse<MdmMainData>> rejectData(@PathVariable String id) {
         MdmMainData result = mainDataService.rejectData(id);
@@ -72,6 +86,7 @@ public class MainDataController {
     /**
      * 撤销
      */
+    @PreAuthorize("hasAuthority('btn:mainData:withdraw')")
     @PostMapping("/{id}/withdraw")
     public ResponseEntity<ApiResponse<MdmMainData>> withdrawData(@PathVariable String id) {
         MdmMainData result = mainDataService.withdrawData(id);
@@ -83,6 +98,7 @@ public class MainDataController {
     /**
      * 发起变更
      */
+    @PreAuthorize("hasAuthority('btn:mainData:change')")
     @PostMapping("/{id}/change")
     public ResponseEntity<ApiResponse<MdmMainData>> initiateChange(@PathVariable String id) {
         MdmMainData result = mainDataService.initiateChange(id);
@@ -175,6 +191,7 @@ public class MainDataController {
     /**
      * 创建主数据
      */
+    @PreAuthorize("hasAuthority('btn:mainData:create')")
     @PostMapping
     public ResponseEntity<ApiResponse<MdmMainData>> createMainData(@RequestBody MdmMainData mainData) {
         mainDataService.saveData(mainData);
@@ -184,6 +201,7 @@ public class MainDataController {
     /**
      * 根据模型ID查询主数据列表
      */
+    @PreAuthorize("hasAuthority('menu:mainData:view')")
     @GetMapping("/model/{modelId}")
     public ResponseEntity<ApiResponse<List<MdmMainData>>> getMainDataByModelId(@PathVariable String modelId) {
         List<MdmMainData> dataList = mainDataService.getMainDataByModelId(modelId);
@@ -202,6 +220,7 @@ public class MainDataController {
     /**
      * 分页查询主数据列表
      */
+    @PreAuthorize("hasAuthority('menu:mainData:view')")
     @GetMapping("/list")
     public ResponseEntity<ApiResponse<Page<MdmMainData>>> getMainDataPage(
             @RequestParam(required = false) String modelId,
@@ -220,6 +239,7 @@ public class MainDataController {
     /**
      * 更新主数据
      */
+    @PreAuthorize("hasAuthority('btn:mainData:edit') or hasAuthority('btn:mainData:batchEdit')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<MdmMainData>> updateMainData(
             @PathVariable String id, @RequestBody MdmMainData mainData) {
@@ -230,6 +250,7 @@ public class MainDataController {
     /**
      * 删除主数据
      */
+    @PreAuthorize("hasAuthority('btn:mainData:delete')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMainData(@PathVariable String id) {
         mainDataService.deleteMainData(id);
@@ -239,6 +260,7 @@ public class MainDataController {
     /**
      * 归档主数据（直接归档，不走归档申请流程）
      */
+    @PreAuthorize("hasAuthority('btn:mainData:archive')")
     @PostMapping("/{id}/archive")
     public ResponseEntity<ApiResponse<MdmMainData>> archiveMainData(@PathVariable String id) {
         MdmMainData archived = mainDataService.archiveData(id);
@@ -252,5 +274,52 @@ public class MainDataController {
     public ResponseEntity<ApiResponse<MdmMainData>> createVersion(@PathVariable String id) {
         MdmMainData newData = mainDataService.initiateChange(id);
         return ResponseEntity.ok(ApiResponse.success("版本已创建", newData));
+    }
+
+    // ==================== 数据导入导出 ====================
+
+    /**
+     * 数据导入
+     */
+    @PostMapping("/import")
+    public ResponseEntity<ApiResponse<ImportResultResponse>> importData(
+            @RequestParam String modelId,
+            @RequestParam(defaultValue = "NORMAL") String importType,
+            @RequestParam("file") MultipartFile file) {
+        ImportResultResponse result = dataImportService.importData(modelId, file, importType);
+        return ResponseEntity.ok(ApiResponse.success("导入完成", result));
+    }
+
+    /**
+     * 数据导出
+     */
+    @GetMapping("/export")
+    public void exportData(
+            @RequestParam String modelId,
+            @RequestParam(required = false) List<String> fieldIds,
+            @RequestParam(defaultValue = "EXCEL") String format,
+            HttpServletResponse response) {
+        dataExportService.exportData(modelId, fieldIds, format, response);
+    }
+
+    /**
+     * 下载导入模板
+     */
+    @GetMapping("/import-template")
+    public ResponseEntity<byte[]> getImportTemplate(@RequestParam String modelId) {
+        byte[] template = dataImportService.getImportTemplate(modelId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=import_template.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(template);
+    }
+
+    /**
+     * 批量编辑
+     */
+    @PutMapping("/batch-edit")
+    public ResponseEntity<ApiResponse<Void>> batchEdit(@RequestBody BatchEditRequest request) {
+        mainDataService.batchEdit(request.getIds(), request.getFields());
+        return ResponseEntity.ok(ApiResponse.success("批量编辑成功", null));
     }
 }

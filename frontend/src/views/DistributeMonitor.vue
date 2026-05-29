@@ -323,9 +323,9 @@ onMounted(async () => {
     font-weight: 700;
     line-height: 1.2;
 
-    &.pending { color: #f59e0b; }
+    &.pending { color: #d97706; }
     &.synced { color: #10b981; }
-    &.failed { color: #ef4444; }
+    &.failed { color: #dc2626; }
   }
 
   .stat-label {

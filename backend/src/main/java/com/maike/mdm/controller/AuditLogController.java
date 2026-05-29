@@ -10,6 +10,7 @@ import com.maike.mdm.service.AuditLogService;
 import com.maike.mdm.service.LoginLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,12 +21,14 @@ public class AuditLogController {
     private final AuditLogService auditLogService;
     private final LoginLogService loginLogService;
 
+    @PreAuthorize("hasAuthority('menu:system:log')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<SysAuditLog>>> queryAuditLogs(AuditLogQueryDTO query) {
         Page<SysAuditLog> page = auditLogService.queryLogs(query);
         return ResponseEntity.ok(ApiResponse.success(page));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:log')")
     @GetMapping("/login-logs")
     public ResponseEntity<ApiResponse<Page<SysLoginLog>>> queryLoginLogs(LoginLogQueryDTO query) {
         Page<SysLoginLog> page = loginLogService.queryLogs(query);

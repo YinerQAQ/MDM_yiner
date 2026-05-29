@@ -42,6 +42,18 @@ public class MdmCodeSegment {
     @TableField("FIXED_VALUE")
     private String fixedValue;
 
+    @TableField("SEGMENT_LENGTH")
+    private Integer segmentLength;
+
+    @TableField("EXPRESSION")
+    private String expression;
+
+    @TableField("REFERENCE_FIELD")
+    private String referenceField;
+
+    @TableField("RELATED_SEGMENT_ID")
+    private String relatedSegmentId;
+
     @TableField("SORT_ORDER")
     private Integer sortOrder;
 

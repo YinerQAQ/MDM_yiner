@@ -13,6 +13,7 @@ export interface BaseMenu {
   sortOrder: number
   status: string
   visible: string
+  perms?: string
   children?: BaseMenu[]
 }
 

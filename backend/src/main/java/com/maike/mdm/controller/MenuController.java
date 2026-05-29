@@ -6,6 +6,7 @@ import com.maike.mdm.entity.BaseMenu;
 import com.maike.mdm.service.MenuService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -35,12 +36,14 @@ public class MenuController {
         return ResponseEntity.ok(ApiResponse.success(tree));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:user') or hasAuthority('menu:system:role')")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createMenu(@RequestBody BaseMenu menu) {
         menuService.createMenu(menu);
         return ResponseEntity.ok(ApiResponse.success("创建成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:user') or hasAuthority('menu:system:role')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateMenu(@PathVariable String id, @RequestBody BaseMenu menu) {
         menu.setId(id);
@@ -48,6 +51,7 @@ public class MenuController {
         return ResponseEntity.ok(ApiResponse.success("更新成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:user') or hasAuthority('menu:system:role')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMenu(@PathVariable String id) {
         menuService.deleteMenu(id);

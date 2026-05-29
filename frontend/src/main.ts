@@ -7,11 +7,13 @@ import './styles/global.scss'
 import './styles/element-override.scss'
 import App from './App.vue'
 import router from './router'
+import authDirective from './directives/permission'
 
 const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)
+app.directive('auth', authDirective)
 
 app.mount('#app')

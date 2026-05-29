@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { getAllModels } from '../api/models'
 import { getMainDataByModelId, getArchiveList, archiveApply, archiveApprove, archiveReject, getArchiveData } from '../api/mainData'
 import type { MdmDataModel } from '../api/types'

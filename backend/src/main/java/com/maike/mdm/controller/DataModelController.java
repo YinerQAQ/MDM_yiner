@@ -6,6 +6,7 @@ import com.maike.mdm.entity.MdmModelAttribute;
 import com.maike.mdm.service.DataModelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,30 +20,35 @@ public class DataModelController {
 
     // ==================== 模型基本CRUD ====================
 
+    @PreAuthorize("hasAuthority('btn:model:create')")
     @PostMapping
     public ResponseEntity<ApiResponse<MdmDataModel>> createModel(@RequestBody MdmDataModel model) {
         MdmDataModel createdModel = dataModelService.createModel(model);
         return ResponseEntity.ok(ApiResponse.success("创建成功", createdModel));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<MdmDataModel>> getModelById(@PathVariable String id) {
         MdmDataModel model = dataModelService.getModelById(id);
         return ResponseEntity.ok(ApiResponse.success(model));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ApiResponse<List<MdmDataModel>>> getAllModels() {
         List<MdmDataModel> models = dataModelService.getAllModels();
         return ResponseEntity.ok(ApiResponse.success(models));
     }
 
+    @PreAuthorize("hasAuthority('btn:model:edit')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<MdmDataModel>> updateModel(@PathVariable String id, @RequestBody MdmDataModel model) {
         MdmDataModel updatedModel = dataModelService.updateModel(id, model);
         return ResponseEntity.ok(ApiResponse.success("更新成功", updatedModel));
     }
 
+    @PreAuthorize("hasAuthority('btn:model:delete')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteModel(@PathVariable String id) {
         dataModelService.deleteModel(id);
@@ -69,6 +75,7 @@ public class DataModelController {
         return ResponseEntity.ok(ApiResponse.success("已拒绝", null));
     }
 
+    @PreAuthorize("hasAuthority('btn:model:publish')")
     @PostMapping("/{id}/publish")
     public ResponseEntity<ApiResponse<Void>> publishModel(@PathVariable String id) {
         dataModelService.publishModel(id);

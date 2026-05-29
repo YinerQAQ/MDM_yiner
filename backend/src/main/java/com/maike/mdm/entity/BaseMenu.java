@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,9 +24,11 @@ public class BaseMenu {
     private String id;
 
     @TableField("MENU_CODE")
+    @JsonProperty("name")
     private String menuCode;
 
     @TableField("MENU_NAME")
+    @JsonProperty("title")
     private String menuName;
 
     @TableField("PARENT_ID")
@@ -51,6 +54,9 @@ public class BaseMenu {
 
     @TableField("VISIBLE")
     private String visible;
+
+    @TableField("PERMS")
+    private String perms;
 
     @TableField("CREATE_TIME")
     private LocalDateTime createTime;

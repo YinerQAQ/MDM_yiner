@@ -7,6 +7,7 @@ import com.maike.mdm.entity.BaseUser;
 import com.maike.mdm.service.GroupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,12 +25,14 @@ public class GroupController {
         return ResponseEntity.ok(ApiResponse.success(groups));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:user') or hasAuthority('menu:system:role')")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createGroup(@RequestBody BaseGroup group) {
         groupService.createGroup(group);
         return ResponseEntity.ok(ApiResponse.success("创建成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:user') or hasAuthority('menu:system:role')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateGroup(@PathVariable String id, @RequestBody BaseGroup group) {
         group.setId(id);
@@ -37,6 +40,7 @@ public class GroupController {
         return ResponseEntity.ok(ApiResponse.success("更新成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:user') or hasAuthority('menu:system:role')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteGroup(@PathVariable String id) {
         groupService.deleteGroup(id);
@@ -49,6 +53,7 @@ public class GroupController {
         return ResponseEntity.ok(ApiResponse.success(orgIds));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:user') or hasAuthority('menu:system:role')")
     @PutMapping("/{id}/orgs")
     public ResponseEntity<ApiResponse<Void>> assignOrgs(@PathVariable String id, @RequestBody List<OrgPermDTO> orgPerms) {
         groupService.assignOrgs(id, orgPerms);

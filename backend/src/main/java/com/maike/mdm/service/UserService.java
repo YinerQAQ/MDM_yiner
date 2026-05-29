@@ -24,4 +24,8 @@ public interface UserService {
     void resetPassword(String id, String newPassword);
 
     void updateUserPassword(String id, String encodedPassword);
+
+    List<String> getUserRoleIds(String userId);
+
+    void assignRoles(String userId, List<String> roleIds);
 }

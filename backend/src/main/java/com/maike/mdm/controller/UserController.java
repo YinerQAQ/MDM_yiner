@@ -8,6 +8,7 @@ import com.maike.mdm.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +20,7 @@ public class UserController {
 
     private final UserService userService;
 
+    @PreAuthorize("hasAuthority('menu:system:user')")
     @AuditLog(operation = "创建用户")
     @PostMapping
     public ResponseEntity<ApiResponse<BaseUser>> createUser(@Valid @RequestBody UserCreateRequest request) {
@@ -38,6 +40,7 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(users));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:user')")
     @AuditLog(operation = "更新用户")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<BaseUser>> updateUser(@PathVariable String id, @RequestBody UserCreateRequest request) {
@@ -45,6 +48,7 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("更新成功", user));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:user')")
     @AuditLog(operation = "删除用户")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable String id) {
@@ -52,15 +56,31 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("删除成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:user')")
     @PutMapping("/{id}/status")
     public ResponseEntity<ApiResponse<Void>> changeStatus(@PathVariable String id, @RequestParam String status) {
         userService.changeUserStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success("状态已更新", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:user')")
     @PutMapping("/{id}/reset-password")
     public ResponseEntity<ApiResponse<Void>> resetPassword(@PathVariable String id, @RequestParam String password) {
         userService.resetPassword(id, password);
         return ResponseEntity.ok(ApiResponse.success("密码已重置", null));
+    }
+
+    @GetMapping("/{id}/roles")
+    public ResponseEntity<ApiResponse<List<String>>> getUserRoleIds(@PathVariable String id) {
+        List<String> roleIds = userService.getUserRoleIds(id);
+        return ResponseEntity.ok(ApiResponse.success(roleIds));
+    }
+
+    @PreAuthorize("hasAuthority('menu:system:user')")
+    @AuditLog(operation = "分配用户角色")
+    @PutMapping("/{id}/roles")
+    public ResponseEntity<ApiResponse<Void>> assignRoles(@PathVariable String id, @RequestBody List<String> roleIds) {
+        userService.assignRoles(id, roleIds);
+        return ResponseEntity.ok(ApiResponse.success("角色分配成功", null));
     }
 }

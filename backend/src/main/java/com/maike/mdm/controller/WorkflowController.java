@@ -9,6 +9,7 @@ import com.maike.mdm.entity.MdmWorkflowTask;
 import com.maike.mdm.service.WorkflowService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,7 @@ public class WorkflowController {
 
     private final WorkflowService workflowService;
 
+    @PreAuthorize("hasAuthority('btn:workflow:create')")
     @PostMapping
     public ResponseEntity<ApiResponse<MdmWorkflow>> createWorkflow(@RequestBody MdmWorkflow workflow) {
         MdmWorkflow createdWorkflow = workflowService.createWorkflow(workflow);
@@ -41,12 +43,14 @@ public class WorkflowController {
         return ResponseEntity.ok(ApiResponse.success(workflows));
     }
 
+    @PreAuthorize("hasAuthority('btn:workflow:edit')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<MdmWorkflow>> updateWorkflow(@PathVariable String id, @RequestBody MdmWorkflow workflow) {
         MdmWorkflow updatedWorkflow = workflowService.updateWorkflow(id, workflow);
         return ResponseEntity.ok(ApiResponse.success("更新成功", updatedWorkflow));
     }
 
+    @PreAuthorize("hasAuthority('btn:workflow:delete')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteWorkflow(@PathVariable String id) {
         workflowService.deleteWorkflow(id);

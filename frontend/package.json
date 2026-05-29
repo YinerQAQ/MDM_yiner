@@ -1,6 +1,6 @@
 {
   "name": "mdm-frontend",
-  "version": "2.0.0"
+  "version": "2.0.0",
   "description": "MDM主数据管理系统前端",
   "scripts": {
     "dev": "vite",

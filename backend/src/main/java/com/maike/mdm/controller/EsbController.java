@@ -10,6 +10,7 @@ import com.maike.mdm.entity.MdmEsbModelDistRecord;
 import com.maike.mdm.service.EsbService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,6 +37,7 @@ public class EsbController {
         return ResponseEntity.ok(ApiResponse.success(dist));
     }
 
+    @PreAuthorize("hasAuthority('btn:esb:distCreate')")
     @PostMapping("/distribute")
     public ResponseEntity<ApiResponse<Void>> createDist(@RequestBody MdmEsbModelDist dist) {
         esbService.createDist(dist);
@@ -85,6 +87,7 @@ public class EsbController {
 
     // ==================== 分发执行 ====================
 
+    @PreAuthorize("hasAuthority('btn:esb:distExecute')")
     @PostMapping("/distribute/{id}/execute")
     public ResponseEntity<ApiResponse<Void>> executeDistribute(
             @PathVariable String id,
@@ -92,6 +95,18 @@ public class EsbController {
         List<String> dataIds = body.get("dataIds");
         esbService.executeDistribute(id, dataIds);
         return ResponseEntity.ok(ApiResponse.success("分发执行完成", null));
+    }
+
+    @PostMapping("/distribute/{id}/retry")
+    public ResponseEntity<ApiResponse<Void>> executeDistWithRetry(@PathVariable String id) {
+        esbService.executeDistWithRetry(id);
+        return ResponseEntity.ok(ApiResponse.success("重试分发完成", null));
+    }
+
+    @PostMapping("/exception/{exceptionId}/retry")
+    public ResponseEntity<ApiResponse<Void>> retryException(@PathVariable String exceptionId) {
+        esbService.retryFromException(exceptionId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     // ==================== 监控 ====================

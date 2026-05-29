@@ -5,6 +5,7 @@ import com.maike.mdm.entity.BaseOrg;
 import com.maike.mdm.service.OrgService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public class OrgController {
 
     private final OrgService orgService;
 
+    @PreAuthorize("hasAuthority('menu:system:org')")
     @PostMapping
     public ResponseEntity<ApiResponse<BaseOrg>> createOrg(@RequestBody BaseOrg org) {
         BaseOrg createdOrg = orgService.createOrg(org);
@@ -34,18 +36,21 @@ public class OrgController {
         return ResponseEntity.ok(ApiResponse.success(orgs));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:org')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<BaseOrg>> updateOrg(@PathVariable String id, @RequestBody BaseOrg org) {
         BaseOrg updatedOrg = orgService.updateOrg(id, org);
         return ResponseEntity.ok(ApiResponse.success("更新成功", updatedOrg));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:org')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteOrg(@PathVariable String id) {
         orgService.deleteOrg(id);
         return ResponseEntity.ok(ApiResponse.success("删除成功", null));
     }
 
+    @PreAuthorize("hasAuthority('menu:system:org')")
     @PutMapping("/{id}/status")
     public ResponseEntity<ApiResponse<Void>> changeStatus(@PathVariable String id, @RequestParam String status) {
         orgService.changeOrgStatus(id, status);

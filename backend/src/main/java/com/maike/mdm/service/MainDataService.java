@@ -136,4 +136,9 @@ public interface MainDataService {
      * 直接归档主数据
      */
     MdmMainData archiveData(String id);
+
+    /**
+     * 批量编辑
+     */
+    void batchEdit(List<String> ids, Map<String, Object> fields);
 }

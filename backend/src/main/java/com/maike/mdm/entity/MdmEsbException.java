@@ -45,6 +45,12 @@ public class MdmEsbException {
     @TableField("HANDLE_TIME")
     private LocalDateTime handleTime;
 
+    @TableField("RETRY_COUNT")
+    private Integer retryCount;
+
+    @TableField("STATUS")
+    private String status;
+
     @TableField("CREATE_TIME")
     private LocalDateTime createTime;
 }

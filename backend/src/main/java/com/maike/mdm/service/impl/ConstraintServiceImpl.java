@@ -10,6 +10,7 @@ import com.maike.mdm.entity.MdmModelConstraint;
 import com.maike.mdm.mapper.MdmMainDataMapper;
 import com.maike.mdm.mapper.MdmModelConstraintMapper;
 import com.maike.mdm.service.ConstraintService;
+import com.maike.mdm.common.util.SafeSpelEvaluator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -76,6 +77,9 @@ public class ConstraintServiceImpl implements ConstraintService {
         }
         if (constraint.getConfigJson() != null) {
             existing.setConfigJson(constraint.getConfigJson());
+        }
+        if (constraint.getConstraintConfig() != null) {
+            existing.setConstraintConfig(constraint.getConstraintConfig());
         }
         if (constraint.getStatus() != null) {
             existing.setStatus(constraint.getStatus());
@@ -474,6 +478,443 @@ public class ConstraintServiceImpl implements ConstraintService {
                 default -> false;
             };
         }
+    }
+
+    // ==================== 约束规则引擎：9种约束类型校验 ====================
+
+    @Override
+    public List<String> validateConstraints(String modelId, Map<String, Object> data, String oldDataId) {
+        List<MdmModelConstraint> constraints = getConstraintsByModelId(modelId);
+        List<String> errors = new ArrayList<>();
+        for (MdmModelConstraint c : constraints) {
+            if (!"启用".equals(c.getStatus())) {
+                continue;
+            }
+            // 检查前置条件CONDITION_EXPR
+            if (c.getConditionExpr() != null && !c.getConditionExpr().trim().isEmpty()) {
+                try {
+                    boolean conditionMet = evaluateSpelExpression(c.getConditionExpr(), data);
+                    if (!conditionMet) {
+                        continue; // 前置条件不满足，跳过
+                    }
+                } catch (Exception e) {
+                    log.warn("前置条件评估异常: constraintId={}, expr={}", c.getId(), c.getConditionExpr());
+                    continue;
+                }
+            }
+            // 读取CONSTRAINT_CONFIG，降级CONFIG_JSON
+            Map<String, Object> config = resolveConstraintConfig(c);
+            String type = c.getConstraintType();
+            if (type == null) continue;
+
+            switch (type) {
+                case "RANGE_CHECK" -> errors.addAll(checkRange(c, data, config));
+                case "GROUP_REQUIRED" -> errors.addAll(checkGroupRequired(c, data, config));
+                case "MASTER_SLAVE_REQUIRED" -> errors.addAll(checkMasterSlaveRequired(c, data, config));
+                case "CROSS_MODEL_CHECK" -> errors.addAll(checkCrossModel(c, data, config));
+                case "EXPRESSION_CHECK" -> errors.addAll(checkExpression(c, data, config));
+                case "CHANGE_CONTROL" -> errors.addAll(checkChangeControl(c, data, config, oldDataId));
+                case "MASTER_SLAVE_MODEL" -> errors.addAll(checkMasterSlaveModel(c, data, config));
+                case "ATTACHMENT_REQUIRED" -> errors.addAll(checkAttachmentRequired(c, data, config));
+                case "ONE_TO_MANY_CHANGE" -> errors.addAll(checkOneToManyChange(c, data, config, oldDataId));
+                default -> log.warn("未知约束类型: {}", type);
+            }
+        }
+        return errors;
+    }
+
+    /**
+     * 读取CONSTRAINT_CONFIG，降级到CONFIG_JSON
+     */
+    private Map<String, Object> resolveConstraintConfig(MdmModelConstraint c) {
+        String configStr = c.getConstraintConfig();
+        if (configStr == null || configStr.trim().isEmpty()) {
+            configStr = c.getConfigJson();
+        }
+        return parseConfigJson(configStr);
+    }
+
+    // ---------- RANGE_CHECK: 属性上下限校验 ----------
+    private List<String> checkRange(MdmModelConstraint c, Map<String, Object> data, Map<String, Object> config) {
+        List<String> errors = new ArrayList<>();
+        String field = getStr(config, "field", c.getConstraintCode());
+        Object value = data.get(field);
+        if (value == null || value.toString().trim().isEmpty()) {
+            return errors; // 值为空跳过
+        }
+        String type = getStr(config, "type", "NUMBER");
+        try {
+            if ("NUMBER".equalsIgnoreCase(type)) {
+                double numValue = Double.parseDouble(value.toString());
+                double min = config.containsKey("min") ? Double.parseDouble(config.get("min").toString()) : Double.MIN_VALUE;
+                double max = config.containsKey("max") ? Double.parseDouble(config.get("max").toString()) : Double.MAX_VALUE;
+                if (numValue < min || numValue > max) {
+                    errors.add(String.format("属性上下限校验失败: 字段[%s]值%s不在范围[%s,%s]内", field, numValue, min, max));
+                }
+            } else if ("DATE".equalsIgnoreCase(type)) {
+                String dateStr = value.toString();
+                String minDate = getStr(config, "minDate", null);
+                String maxDate = getStr(config, "maxDate", null);
+                if (minDate != null && dateStr.compareTo(minDate) < 0) {
+                    errors.add(String.format("属性上下限校验失败: 字段[%s]日期%s早于最小日期%s", field, dateStr, minDate));
+                }
+                if (maxDate != null && dateStr.compareTo(maxDate) > 0) {
+                    errors.add(String.format("属性上下限校验失败: 字段[%s]日期%s晚于最大日期%s", field, dateStr, maxDate));
+                }
+            }
+        } catch (NumberFormatException e) {
+            errors.add(String.format("属性上下限校验失败: 字段[%s]值不是有效数字", field));
+        }
+        return errors;
+    }
+
+    // ---------- GROUP_REQUIRED: 属性组必填校验 ----------
+    private List<String> checkGroupRequired(MdmModelConstraint c, Map<String, Object> data, Map<String, Object> config) {
+        List<String> errors = new ArrayList<>();
+        @SuppressWarnings("unchecked")
+        List<String> fields = config.get("fields") != null ?
+                (List<String>) config.get("fields") : Collections.singletonList(c.getConstraintCode());
+        String mode = getStr(config, "mode", "AT_LEAST_ONE");
+        int minRequired = config.containsKey("minRequired") ?
+                Integer.parseInt(config.get("minRequired").toString()) : 1;
+
+        long filledCount = fields.stream()
+                .filter(f -> data.get(f) != null && !data.get(f).toString().trim().isEmpty())
+                .count();
+
+        switch (mode) {
+            case "ALL_REQUIRED" -> {
+                if (filledCount < fields.size()) {
+                    errors.add(String.format("属性组必填校验失败: 字段%s必须全部填写", fields));
+                }
+            }
+            case "ALL_EMPTY" -> {
+                if (filledCount > 0) {
+                    errors.add(String.format("属性组必填校验失败: 字段%s必须全部为空", fields));
+                }
+            }
+            default -> {
+                if (filledCount < minRequired) {
+                    errors.add(String.format("属性组必填校验失败: 字段%s至少需要填写%d个", fields, minRequired));
+                }
+            }
+        }
+        return errors;
+    }
+
+    // ---------- MASTER_SLAVE_REQUIRED: 主从必填校验 ----------
+    private List<String> checkMasterSlaveRequired(MdmModelConstraint c, Map<String, Object> data, Map<String, Object> config) {
+        List<String> errors = new ArrayList<>();
+        String masterField = getStr(config, "masterField", "");
+        @SuppressWarnings("unchecked")
+        List<String> slaveFields = config.get("slaveFields") != null ?
+                (List<String>) config.get("slaveFields") :
+                (config.get("detailFields") != null ? (List<String>) config.get("detailFields") : Collections.emptyList());
+
+        Object masterValue = data.get(masterField);
+        boolean masterHasValue = masterValue != null && !masterValue.toString().trim().isEmpty();
+
+        if (masterHasValue) {
+            for (String slaveField : slaveFields) {
+                Object slaveValue = data.get(slaveField);
+                if (slaveValue == null || slaveValue.toString().trim().isEmpty()) {
+                    errors.add(String.format("主从必填校验失败: 主字段[%s]有值时，从字段[%s]必填", masterField, slaveField));
+                }
+            }
+        }
+        return errors;
+    }
+
+    // ---------- CROSS_MODEL_CHECK: 跨模型关联校验 ----------
+    private List<String> checkCrossModel(MdmModelConstraint c, Map<String, Object> data, Map<String, Object> config) {
+        List<String> errors = new ArrayList<>();
+        String targetModel = getStr(config, "targetModel", "");
+        String targetField = getStr(config, "targetField", "");
+        String condition = getStr(config, "condition", "IN");
+        @SuppressWarnings("unchecked")
+        List<String> values = config.get("values") != null ?
+                (List<String>) config.get("values") : Collections.emptyList();
+
+        // 查找目标模型中的数据
+        LambdaQueryWrapper<MdmMainData> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(MdmMainData::getModelId, targetModel)
+                .eq(MdmMainData::getIsDeleted, 0);
+        List<MdmMainData> targetDataList = mdmMainDataMapper.selectList(queryWrapper);
+
+        boolean matchFound = false;
+        for (MdmMainData targetData : targetDataList) {
+            if (targetData.getJsonData() == null) continue;
+            try {
+                Map<String, Object> targetFields = objectMapper.readValue(targetData.getJsonData(),
+                        new TypeReference<Map<String, Object>>() {});
+                Object targetValue = targetFields.get(targetField);
+                if (targetValue == null) continue;
+
+                switch (condition) {
+                    case "IN" -> {
+                        if (values.contains(targetValue.toString())) {
+                            matchFound = true;
+                        }
+                    }
+                    case "NOT_IN" -> {
+                        if (!values.contains(targetValue.toString())) {
+                            matchFound = true;
+                        }
+                    }
+                    case "EXISTS" -> matchFound = true;
+                    default -> matchFound = true;
+                }
+                if (matchFound && "IN".equals(condition)) break;
+            } catch (Exception e) {
+                log.warn("解析目标模型数据JSON失败: id={}", targetData.getId());
+            }
+        }
+
+        // IN条件：目标模型必须存在匹配值；NOT_IN：目标模型不能存在匹配值
+        if ("IN".equals(condition) && !matchFound) {
+            errors.add(String.format("跨模型关联校验失败: 目标模型[%s]字段[%s]不存在满足条件的值%s", targetModel, targetField, values));
+        }
+        if ("NOT_IN".equals(condition) && matchFound) {
+            errors.add(String.format("跨模型关联校验失败: 目标模型[%s]字段[%s]存在不允许的值%s", targetModel, targetField, values));
+        }
+        return errors;
+    }
+
+    // ---------- EXPRESSION_CHECK: SpEL表达式校验 ----------
+    private List<String> checkExpression(MdmModelConstraint c, Map<String, Object> data, Map<String, Object> config) {
+        List<String> errors = new ArrayList<>();
+        String expression = getStr(config, "expression", c.getConditionExpr());
+        String errorMsg = getStr(config, "errorMsg", "SpEL表达式校验失败");
+
+        if (expression == null || expression.trim().isEmpty()) {
+            return errors;
+        }
+        try {
+            boolean result = evaluateSpelExpression(expression, data);
+            if (!result) {
+                errors.add(errorMsg);
+            }
+        } catch (Exception e) {
+            log.error("SpEL表达式评估失败: {}", expression, e);
+            errors.add("SpEL表达式评估异常: " + e.getMessage());
+        }
+        return errors;
+    }
+
+    // ---------- CHANGE_CONTROL: 变更字段控制 ----------
+    private List<String> checkChangeControl(MdmModelConstraint c, Map<String, Object> data, Map<String, Object> config, String oldDataId) {
+        List<String> errors = new ArrayList<>();
+        @SuppressWarnings("unchecked")
+        List<String> lockedFields = config.get("lockedFields") != null ?
+                (List<String>) config.get("lockedFields") : Collections.emptyList();
+        String afterStatus = getStr(config, "afterStatus", "");
+
+        // 只有在变更场景下（oldDataId不为空）才校验
+        if (oldDataId == null || oldDataId.trim().isEmpty()) {
+            return errors;
+        }
+
+        // 获取原始数据
+        MdmMainData oldMainData = mdmMainDataMapper.selectById(oldDataId);
+        if (oldMainData == null) {
+            return errors;
+        }
+
+        // 仅在特定状态下锁定字段
+        if (!afterStatus.isEmpty() && !afterStatus.equals(oldMainData.getDataStatus())) {
+            return errors;
+        }
+
+        Map<String, Object> oldData = parseJsonData(oldMainData.getJsonData());
+        for (String lockedField : lockedFields) {
+            Object newValue = data.get(lockedField);
+            Object oldValue = oldData.get(lockedField);
+            if (oldValue != null && newValue != null && !oldValue.toString().equals(newValue.toString())) {
+                errors.add(String.format("变更字段控制校验失败: 字段[%s]在%s状态下不允许变更", lockedField, afterStatus));
+            }
+        }
+        return errors;
+    }
+
+    // ---------- MASTER_SLAVE_MODEL: 模型主从控制 ----------
+    private List<String> checkMasterSlaveModel(MdmModelConstraint c, Map<String, Object> data, Map<String, Object> config) {
+        List<String> errors = new ArrayList<>();
+        String masterModel = getStr(config, "masterModel", "");
+        String slaveModel = getStr(config, "slaveModel", "");
+        String relationField = getStr(config, "relationField", "");
+        String mode = getStr(config, "mode", "AT_LEAST_N");
+        int minRecords = config.containsKey("minRecords") ?
+                Integer.parseInt(config.get("minRecords").toString()) : 1;
+        @SuppressWarnings("unchecked")
+        List<String> requiredFields = config.get("requiredFields") != null ?
+                (List<String>) config.get("requiredFields") : Collections.emptyList();
+
+        // 查询从模型数据，验证关联数据存在性
+        if (!slaveModel.isEmpty()) {
+            LambdaQueryWrapper<MdmMainData> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(MdmMainData::getModelId, slaveModel)
+                    .eq(MdmMainData::getIsDeleted, 0);
+            List<MdmMainData> slaveDataList = mdmMainDataMapper.selectList(queryWrapper);
+
+            // 检查关联数据条数
+            long relatedCount = 0;
+            for (MdmMainData slaveData : slaveDataList) {
+                if (slaveData.getJsonData() == null) continue;
+                Map<String, Object> slaveFields = parseJsonData(slaveData.getJsonData());
+                Object relValue = slaveFields.get(relationField);
+                // 检查是否与当前数据关联
+                Object dataId = data.get("id");
+                if (relValue != null && dataId != null && relValue.toString().equals(dataId.toString())) {
+                    relatedCount++;
+                    // 检查从模型必填字段
+                    for (String reqField : requiredFields) {
+                        Object fieldValue = slaveFields.get(reqField);
+                        if (fieldValue == null || fieldValue.toString().trim().isEmpty()) {
+                            errors.add(String.format("模型主从控制校验失败: 从模型[%s]字段[%s]必填", slaveModel, reqField));
+                        }
+                    }
+                }
+            }
+
+            if ("AT_LEAST_N".equals(mode) && relatedCount < minRecords) {
+                errors.add(String.format("模型主从控制校验失败: 从模型[%s]至少需要%d条关联记录，当前%d条", slaveModel, minRecords, relatedCount));
+            }
+            if (("ALL_REQUIRED".equals(mode) || "SPECIFIED_REQUIRED".equals(mode)) && relatedCount == 0) {
+                errors.add(String.format("模型主从控制校验失败: 从模型[%s]必须存在关联记录", slaveModel));
+            }
+        }
+        return errors;
+    }
+
+    // ---------- ATTACHMENT_REQUIRED: 附件必填校验 ----------
+    private List<String> checkAttachmentRequired(MdmModelConstraint c, Map<String, Object> data, Map<String, Object> config) {
+        List<String> errors = new ArrayList<>();
+        @SuppressWarnings("unchecked")
+        List<String> requiredStatus = config.get("requiredStatus") != null ?
+                (List<String>) config.get("requiredStatus") : Collections.emptyList();
+        int minCount = config.containsKey("minCount") ?
+                Integer.parseInt(config.get("minCount").toString()) : 1;
+
+        // 检查数据状态是否在必填状态列表中
+        Object status = data.get("dataStatus");
+        if (status == null) status = data.get("DATA_STATUS");
+        if (!requiredStatus.isEmpty() && (status == null || !requiredStatus.contains(status.toString()))) {
+            return errors; // 当前状态不在必填范围内
+        }
+
+        // 检查附件数量
+        Object attachmentCount = data.get("attachmentCount");
+        if (attachmentCount == null) attachmentCount = data.get("ATTACHMENT_COUNT");
+        int count = 0;
+        if (attachmentCount != null) {
+            try {
+                count = Integer.parseInt(attachmentCount.toString());
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+        }
+
+        if (count < minCount) {
+            errors.add(String.format("附件必填校验失败: 至少需要%d个附件，当前%d个", minCount, count));
+        }
+        return errors;
+    }
+
+    // ---------- ONE_TO_MANY_CHANGE: 一对多变更校验 ----------
+    private List<String> checkOneToManyChange(MdmModelConstraint c, Map<String, Object> data, Map<String, Object> config, String oldDataId) {
+        List<String> errors = new ArrayList<>();
+        String childModel = getStr(config, "childModel", "");
+        String relationField = getStr(config, "relationField", "");
+        boolean allowDelete = config.containsKey("allowDelete") &&
+                Boolean.parseBoolean(config.get("allowDelete").toString());
+        String exceptionExpression = getStr(config, "exceptionExpression", "");
+
+        // 检查是否满足例外条件
+        if (!exceptionExpression.isEmpty()) {
+            try {
+                boolean isException = evaluateSpelExpression(exceptionExpression, data);
+                if (isException) {
+                    return errors; // 满足例外条件，跳过校验
+                }
+            } catch (Exception e) {
+                log.warn("一对多变更例外表达式评估失败: {}", exceptionExpression);
+            }
+        }
+
+        // 仅在变更场景下校验
+        if (oldDataId == null || oldDataId.trim().isEmpty()) {
+            return errors;
+        }
+
+        if (!allowDelete && !childModel.isEmpty()) {
+            // 获取变更前的从模型数据
+            LambdaQueryWrapper<MdmMainData> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(MdmMainData::getModelId, childModel)
+                    .eq(MdmMainData::getIsDeleted, 0);
+            List<MdmMainData> oldChildData = mdmMainDataMapper.selectList(queryWrapper);
+
+            // 统计原有从数据中关联到当前主数据的条数
+            long oldRelatedCount = 0;
+            for (MdmMainData child : oldChildData) {
+                if (child.getJsonData() == null) continue;
+                Map<String, Object> childFields = parseJsonData(child.getJsonData());
+                Object relValue = childFields.get(relationField);
+                if (relValue != null && relValue.toString().equals(oldDataId)) {
+                    oldRelatedCount++;
+                }
+            }
+
+            // 统计新数据中关联的从数据条数
+            Object newChildCount = data.get("childCount");
+            long newRelatedCount = oldRelatedCount; // 默认不变
+            if (newChildCount != null) {
+                try {
+                    newRelatedCount = Long.parseLong(newChildCount.toString());
+                } catch (NumberFormatException e) {
+                    // keep default
+                }
+            }
+
+            if (newRelatedCount < oldRelatedCount) {
+                errors.add(String.format("一对多变更校验失败: 从模型[%s]不允许删除原有记录", childModel));
+            }
+        }
+        return errors;
+    }
+
+    // ==================== 工具方法 ====================
+
+    /**
+     * 评估SpEL表达式，#data引用数据Map
+     */
+    private boolean evaluateSpelExpression(String expression, Map<String, Object> data) {
+        Map<String, Object> variables = new java.util.HashMap<>(data);
+        variables.put("data", data);
+        return Boolean.TRUE.equals(SafeSpelEvaluator.evaluateBoolean(expression, variables));
+    }
+
+    /**
+     * 解析JSON数据为Map
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseJsonData(String jsonData) {
+        if (jsonData == null || jsonData.trim().isEmpty()) {
+            return new HashMap<>();
+        }
+        try {
+            return objectMapper.readValue(jsonData, new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            log.warn("解析JSON数据失败: {}", jsonData, e);
+            return new HashMap<>();
+        }
+    }
+
+    /**
+     * 安全获取字符串配置值
+     */
+    private String getStr(Map<String, Object> config, String key, String defaultValue) {
+        Object val = config.get(key);
+        return val != null ? val.toString() : defaultValue;
     }
 
     /**

@@ -28,6 +28,7 @@ public class EsbServiceImpl implements EsbService {
     private final MdmEsbInfoSystemMapper mdmEsbInfoSystemMapper;
     private final MdmMainDataMapper mdmMainDataMapper;
     private final MdmDataModelMapper mdmDataModelMapper;
+    private final MdmEsbExceptionMapper esbExceptionMapper;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -98,6 +99,18 @@ public class EsbServiceImpl implements EsbService {
         }
         if (dist.getTimeout() != null) {
             existing.setTimeout(dist.getTimeout());
+        }
+        if (dist.getMaxRetry() != null) {
+            existing.setMaxRetry(dist.getMaxRetry());
+        }
+        if (dist.getNotifyType() != null) {
+            existing.setNotifyType(dist.getNotifyType());
+        }
+        if (dist.getNotifyTarget() != null) {
+            existing.setNotifyTarget(dist.getNotifyTarget());
+        }
+        if (dist.getTimeoutSeconds() != null) {
+            existing.setTimeoutSeconds(dist.getTimeoutSeconds());
         }
         if (dist.getTargetSystemId() != null) {
             existing.setTargetSystemId(dist.getTargetSystemId());
@@ -304,6 +317,128 @@ public class EsbServiceImpl implements EsbService {
 
         mdmEsbModelDistDataMapper.insert(distData);
         log.info("加入待分发队列: distId={}, dataId={}", distId, dataId);
+    }
+
+    // ==================== 重试机制 ====================
+
+    @Override
+    public void executeDistWithRetry(String distId) {
+        MdmEsbModelDist dist = mdmEsbModelDistMapper.selectById(distId);
+        if (dist == null) {
+            throw BusinessException.of("分发接口不存在");
+        }
+
+        int maxRetry = dist.getMaxRetry() != null ? dist.getMaxRetry() : 3;
+        int retryInterval = dist.getRetryInterval() != null ? dist.getRetryInterval() : 60;
+
+        // 查询待同步数据ID列表
+        List<String> dataIds = getPendingDataIds(distId, dist.getBatchSize());
+        if (dataIds.isEmpty()) {
+            log.info("分发[{}]无待同步数据，跳过", distId);
+            return;
+        }
+
+        for (int attempt = 1; attempt <= maxRetry; attempt++) {
+            try {
+                executeDistribute(distId, dataIds);
+                log.info("分发[{}]第{}次执行成功", distId, attempt);
+                return; // 成功则返回
+            } catch (Exception e) {
+                logException(distId, e, attempt);
+                if (attempt < maxRetry) {
+                    try {
+                        // 指数退避: interval * 2^(attempt-1)
+                        long sleepMs = retryInterval * 1000L * (long) Math.pow(2, attempt - 1);
+                        // 最大间隔5分钟(300秒)
+                        sleepMs = Math.min(sleepMs, 300_000L);
+                        log.info("分发[{}]第{}次重试失败，{}秒后重试", distId, attempt, sleepMs / 1000);
+                        Thread.sleep(sleepMs);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        log.warn("分发[{}]重试等待被中断", distId);
+                        break;
+                    }
+                }
+            }
+        }
+        // 全部重试失败，记录异常并通知
+        notifyFailure(distId);
+    }
+
+    @Override
+    public void retryFromException(String exceptionId) {
+        MdmEsbException exception = esbExceptionMapper.selectById(exceptionId);
+        if (exception == null) {
+            throw BusinessException.of("异常记录不存在");
+        }
+
+        String distId = exception.getDistId();
+        log.info("手动重试: exceptionId={}, distId={}", exceptionId, distId);
+
+        // 更新异常记录状态为已处理
+        exception.setHandleStatus("已处理");
+        exception.setStatus("RESOLVED");
+        exception.setHandleTime(LocalDateTime.now());
+        esbExceptionMapper.updateById(exception);
+
+        // 重新执行分发(含重试)
+        executeDistWithRetry(distId);
+    }
+
+    private List<String> getPendingDataIds(String distId, Integer batchSize) {
+        LambdaQueryWrapper<MdmEsbModelDistData> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(MdmEsbModelDistData::getDistId, distId)
+                .eq(MdmEsbModelDistData::getSyncStatus, "待同步");
+        if (batchSize != null && batchSize > 0) {
+            queryWrapper.last("LIMIT " + batchSize);
+        }
+        List<MdmEsbModelDistData> distDataList = mdmEsbModelDistDataMapper.selectList(queryWrapper);
+        List<String> dataIds = new ArrayList<>();
+        for (MdmEsbModelDistData dd : distDataList) {
+            dataIds.add(dd.getDataId());
+        }
+        return dataIds;
+    }
+
+    private void logException(String distId, Exception e, int attempt) {
+        MdmEsbException exception = MdmEsbException.builder()
+                .id(UUID.randomUUID().toString().replace("-", ""))
+                .distId(distId)
+                .exceptionType("DIST_FAILURE")
+                .exceptionMsg(e.getMessage())
+                .retryCount(attempt)
+                .status("FAILED")
+                .createTime(LocalDateTime.now())
+                .build();
+        esbExceptionMapper.insert(exception);
+        log.warn("分发[{}]第{}次重试异常: {}", distId, attempt, e.getMessage());
+    }
+
+    private void notifyFailure(String distId) {
+        MdmEsbModelDist dist = mdmEsbModelDistMapper.selectById(distId);
+        if (dist == null) return;
+
+        // 记录最终失败异常
+        MdmEsbException exception = MdmEsbException.builder()
+                .id(UUID.randomUUID().toString().replace("-", ""))
+                .distId(distId)
+                .exceptionType("ALL_RETRY_EXHAUSTED")
+                .exceptionMsg("所有重试均失败")
+                .notifyType(dist.getNotifyType())
+                .notifyStatus("PENDING")
+                .status("FAILED")
+                .createTime(LocalDateTime.now())
+                .build();
+        esbExceptionMapper.insert(exception);
+
+        if ("EMAIL".equals(dist.getNotifyType()) && dist.getNotifyTarget() != null) {
+            // 记录通知日志（实际邮件发送可后续集成）
+            log.warn("分发[{}]全部重试失败，需通知: {}", distId, dist.getNotifyTarget());
+        } else if ("SMS".equals(dist.getNotifyType()) && dist.getNotifyTarget() != null) {
+            log.warn("分发[{}]全部重试失败，需短信通知: {}", distId, dist.getNotifyTarget());
+        } else {
+            log.warn("分发[{}]全部重试失败", distId);
+        }
     }
 
     // ==================== 监控 ====================

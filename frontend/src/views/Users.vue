@@ -166,7 +166,7 @@ onMounted(() => {
         <h2 class="page-title">用户管理</h2>
         <p class="page-desc">管理系统用户账号、权限与状态</p>
       </div>
-      <ElButton type="primary" @click="openDialog()">新建用户</ElButton>
+      <ElButton v-auth="'btn:user:add'" type="primary" @click="openDialog()">新建用户</ElButton>
     </div>
 
     <div class="table-card">
@@ -186,12 +186,12 @@ onMounted(() => {
         </ElTableColumn>
         <ElTableColumn label="操作" width="280">
           <template #default="scope">
-            <ElButton type="primary" size="small" @click="openDialog(scope.row)">编辑</ElButton>
+            <ElButton v-auth="'btn:user:edit'" type="primary" size="small" @click="openDialog(scope.row)">编辑</ElButton>
             <ElButton type="warning" size="small" @click="handleStatusChange(scope.row.id, scope.row.status === '启用' ? '停用' : '启用')">
               {{ scope.row.status === '启用' ? '停用' : '启用' }}
             </ElButton>
             <ElButton size="small" @click="handleResetPassword(scope.row.id)">重置密码</ElButton>
-            <ElButton type="danger" size="small" @click="handleDelete(scope.row.id)">删除</ElButton>
+            <ElButton v-auth="'btn:user:delete'" type="danger" size="small" @click="handleDelete(scope.row.id)">删除</ElButton>
           </template>
         </ElTableColumn>
       </ElTable>

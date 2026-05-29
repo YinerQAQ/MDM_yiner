@@ -308,13 +308,17 @@ onMounted(() => {
           placeholder="请选择数据模型"
           style="width: 320px;"
           clearable
+          filterable
         >
           <el-option
             v-for="m in models"
             :key="m.id"
-            :label="m.modelName"
+            :label="m.modelName || m.modelCode || m.id"
             :value="m.id"
-          />
+          >
+            <span style="float: left">{{ m.modelName || '(未命名)' }}</span>
+            <span style="float: right; color: var(--text-muted); font-size: 12px;">{{ m.modelCode }}</span>
+          </el-option>
         </el-select>
         <span v-if="currentModelName" style="color: var(--text-muted); font-size: 13px;">
           已选择：{{ currentModelName }}
@@ -366,7 +370,7 @@ onMounted(() => {
 
     <!-- 新增/编辑Dialog - 步骤表单 -->
     <el-dialog
-      :title="isEdit ? '编辑分发接口' : '新建分发接口'"
+      :title="(isEdit ? '编辑分发接口' : '新建分发接口') + (currentModelName ? '  ·  ' + currentModelName : '')"
       v-model="dialogVisible"
       width="640px"
       :close-on-click-modal="false"
@@ -380,6 +384,9 @@ onMounted(() => {
       <!-- Step1: 基本配置 -->
       <div v-show="currentStep === 0">
         <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+          <el-form-item label="所属模型">
+            <el-input :model-value="currentModelName || '未选择'" disabled />
+          </el-form-item>
           <el-form-item label="接口名称" prop="name">
             <el-input v-model="form.name" placeholder="请输入接口名称" />
           </el-form-item>

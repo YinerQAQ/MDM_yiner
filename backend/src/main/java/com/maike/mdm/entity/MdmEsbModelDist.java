@@ -54,6 +54,18 @@ public class MdmEsbModelDist {
     @TableField("TIMEOUT")
     private Integer timeout;
 
+    @TableField("MAX_RETRY")
+    private Integer maxRetry;
+
+    @TableField("NOTIFY_TYPE")
+    private String notifyType;
+
+    @TableField("NOTIFY_TARGET")
+    private String notifyTarget;
+
+    @TableField("TIMEOUT_SECONDS")
+    private Integer timeoutSeconds;
+
     @TableField("TARGET_SYSTEM_ID")
     private String targetSystemId;
 
